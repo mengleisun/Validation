@@ -1,0 +1,1 @@
+/store/relval/CMSSW_7_0_0_pre9/MinimumBias/RECO/PRE_62_V8_RelVal_mb2012B-v4/ 00000
