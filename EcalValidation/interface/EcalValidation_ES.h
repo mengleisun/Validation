@@ -23,6 +23,7 @@
 #include "TFile.h"
 #include "TH1.h"
 #include "TH2.h"
+#include "TTree.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
 
@@ -171,8 +172,54 @@ class EcalValidation_ES : public edm::EDAnalyzer {
 	 TH1D* h_CentralStrip_P1_E;
 	 TH1D* h_CentralStrip_P2_E;
 
-	 TH1D* plane1_stripsN_E[31];
-	 TH1D* plane2_stripsN_E[31];
+	 //	 TH1D* plane1_stripsN_E[31*500];
+	 //	 TH1D* plane2_stripsN_E[31*500];
+
+
+	 TH2D* plane2_vs_plane1;
+	 TH1D* sclusterEnergy;
+	 TH1D* ES_over_sclusterEnergy;
+	 TH1D* nEvents;
+	 TH1D* nElectronsPerEvents;
+
+	 int totEvents;
+
+	 TTree* tree_;
+	 int event;
+	 int run;
+	 int lumi; 
+	 int nRH;
+	 int nt_rhES_z[200000];
+	 int nt_rhES_p[200000];
+	 int nt_rhES_x[200000];
+	 int nt_rhES_y[200000];
+	 int nt_rhES_s[200000];
+	 float nt_rhES_t[200000];
+	 float nt_rhES_e[200000];
+	 float nt_rhES_posx[200000];
+	 float nt_rhES_posy[200000];
+	 float nt_rhES_posz[200000];
+	 float nt_rhES_eta[200000];
+	 float nt_rhES_phi[200000];
+	 //int nt_rhES_ADC0;
+	 //int nt_rhES_ADC1;
+	 //iont nt_rhES_ADC2;
+	 int nt_rhES_status[200000];
+	 int nSC;
+	 float nt_scEn[500];
+	 float nt_scX[500];
+	 float nt_scY[500];
+	 float nt_scZ[500];
+	 float nt_scEta[500];
+	 float nt_scPhi[500];
+	 float nt_scRawEn[500];
+	 float nt_scESEn[500];
+	 float nt_scEtaWidth[500];
+	 float nt_scPhiWidth[500];
+
+ 	 float nt_p1_stripsN_E[15500];
+ 	 float nt_p2_stripsN_E[15500];
+
 };
 
 

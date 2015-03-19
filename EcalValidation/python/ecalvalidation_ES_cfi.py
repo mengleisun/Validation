@@ -11,6 +11,7 @@ ecalvalidationES = cms.EDAnalyzer("EcalValidation_ES",
     #esDigiCollection          = cms.InputTag("simEcalUnsuppressedDigis",""),
 
     EleTag                    = cms.InputTag("gsfElectrons"),
+    #EleTag                    = cms.InputTag("gedGsfElectrons"),
     PhoTag                    = cms.InputTag("photons"),
     saveDigis                 = cms.untracked.bool(False),
     SaveSrFlag                = cms.untracked.bool(True),

@@ -180,10 +180,50 @@ EcalValidation_ES::EcalValidation_ES(const edm::ParameterSet& ps)
   h_CentralStrip_P2_E = fs->make<TH1D>("h_CentralStrip_P2_E","h_CentralStrip_P2_E", 1000, 0., 0.05);
 
 
-  for(int i=0; i<31; ++i){
-    plane1_stripsN_E[i] = fs->make<TH1D>(Form("plane1_stripsN_E_%d",i), "", 1000, 0., 0.05);
-    plane2_stripsN_E[i] = fs->make<TH1D>(Form("plane2_stripsN_E_%d",i), "", 1000, 0., 0.05);
-  }
+  //  for(int i=0; i<31*500; ++i){
+    //    plane1_stripsN_E[i] = fs->make<TH1D>(Form("plane1_stripsN_E_%d_ele%d",i%31, i/31), "", 1000, 0., 0.05);
+    //    plane2_stripsN_E[i] = fs->make<TH1D>(Form("plane2_stripsN_E_%d_ele%d",i%31, i/31), "", 1000, 0., 0.05);
+  //  }
+
+  plane2_vs_plane1 = fs->make<TH2D>("plane2_vs_plane1","plane2_vs_plane1",500, 0., 0.1, 500, 0., 0.1);
+  sclusterEnergy = fs->make<TH1D>("sclusterEnergy","sclusterEnergy",1000, 0., 100.);
+  ES_over_sclusterEnergy = fs->make<TH1D>("ES_over_sclusterEnergy","ES_over_sclusterEnergy",1000, 0., 10.);
+  nEvents = fs->make<TH1D>("nEvents","nEvents",5, 0., 5.);
+  nElectronsPerEvents = fs->make<TH1D>("nElectronsPerEvents","nElectronsPerEvents",50, 0., 50.);
+  
+  totEvents = 0;
+
+  tree_ = fs->make<TTree>("tree","tree");
+  tree_->Branch("event", &event, "event/I");
+  tree_->Branch("run", &run, "run/I");
+  tree_->Branch("lumi", &lumi, "lumi/I");
+  tree_->Branch("nRH", &nRH, "nRH/I");
+  tree_->Branch("nt_rhES_z", nt_rhES_z, "nt_rhES_z[nRH]/I");
+  tree_->Branch("nt_rhES_p", nt_rhES_p, "nt_rhES_p[nRH]/I");
+  tree_->Branch("nt_rhES_x", nt_rhES_x, "nt_rhES_x[nRH]/I");
+  tree_->Branch("nt_rhES_y", nt_rhES_y, "nt_rhES_y[nRH]/I");
+  tree_->Branch("nt_rhES_s", nt_rhES_s, "nt_rhES_s[nRH]/I");
+  tree_->Branch("nt_rhES_t", nt_rhES_t, "nt_rhES_t[nRH]/F");
+  tree_->Branch("nt_rhES_e", nt_rhES_e, "nt_rhES_e[nRH]/F");
+  tree_->Branch("nt_rhES_posx", nt_rhES_posx, "nt_rhES_posx[nRH]/F");
+  tree_->Branch("nt_rhES_posy", nt_rhES_posy, "nt_rhES_posy[nRH]/F");
+  tree_->Branch("nt_rhES_posz", nt_rhES_posz, "nt_rhES_posz[nRH]/F");
+  tree_->Branch("nt_rhES_eta", nt_rhES_eta, "nt_rhES_eta[nRH]/F");
+  tree_->Branch("nt_rhES_phi", nt_rhES_phi, "nt_rhES_phi[nRH]/F");
+  tree_->Branch("nt_rhES_status", nt_rhES_status, "nt_rhES_status[nRH]/I");
+  tree_->Branch("nSC", &nSC, "nSC/I");
+  tree_->Branch("nt_scEn", nt_scEn, "nt_scEn[nSC]/F");
+  tree_->Branch("nt_scX", nt_scX, "nt_scX[nSC]/F");
+  tree_->Branch("nt_scY", nt_scY, "nt_scY[nSC]/F");
+  tree_->Branch("nt_scZ", nt_scZ, "nt_scZ[nSC]/F");
+  tree_->Branch("nt_scEta", nt_scEta, "nt_scEta[nSC]/F");
+  tree_->Branch("nt_scPhi", nt_scPhi, "nt_scPhi[nSC]/F");
+  tree_->Branch("nt_scRawEn", nt_scRawEn, "nt_scRawEn[nSC]/F");
+  tree_->Branch("nt_scESEn", nt_scESEn, "nt_scESEn[nSC]/F");
+  tree_->Branch("nt_scEtaWidth", nt_scEtaWidth, "nt_scEtaWidth[nSC]/F");
+  tree_->Branch("nt_scPhiWidth", nt_scPhiWidth, "nt_scPhiWidth[nSC]/F");
+  tree_->Branch("nt_p1_stripsN_E", nt_p1_stripsN_E, "nt_p1_stripsN_E[15500]/F");
+  tree_->Branch("nt_p2_stripsN_E", nt_p2_stripsN_E, "nt_p2_stripsN_E[15500]/F");
 
 }
 
@@ -193,6 +233,8 @@ EcalValidation_ES::~EcalValidation_ES()
 {
         // do anything here that needs to be done at desctruction time
         // (e.g. close files, deallocate resources etc.)
+
+
 }
 
 
@@ -203,12 +245,16 @@ EcalValidation_ES::~EcalValidation_ES()
 // ------------ method called to for each event  ------------
 void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 {
+
+  ++totEvents;
+
   //*********** CALO GEOMETRY                                                                                                                                                                                           
   edm::ESHandle<CaloGeometry> pGeometry;
   iSetup.get<CaloGeometryRecord>().get(pGeometry);
   const CaloGeometry *geometry = pGeometry.product();
 
   const CaloSubdetectorGeometry *geometryES = geometry->getSubdetectorGeometry(DetId::Ecal, EcalPreshower);
+  const CaloSubdetectorGeometry *& geometry_p = geometryES;
   CaloSubdetectorTopology *topologyES = 0;
   if(geometryES) topologyES = new EcalPreshowerTopology(geometry);
 
@@ -266,8 +312,33 @@ void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSe
   int nF[2]={0,0};
   int nR[2]={0,0};
 
+  nRH = 0;
   for (ESRecHitCollection::const_iterator esItr = thePreShowerRecHits->begin(); esItr != thePreShowerRecHits->end(); ++esItr)
     {
+
+      ESDetId rhid = ESDetId(esItr->id());
+      const CaloCellGeometry *esCell = geometry_p->getGeometry(rhid);
+      GlobalPoint espoint = esCell->getPosition();
+
+
+      nt_rhES_posx[nRH] = espoint.x();
+      nt_rhES_posy[nRH] = espoint.y();
+      nt_rhES_posz[nRH] = espoint.z();
+      nt_rhES_eta[nRH]  = espoint.eta();
+      nt_rhES_phi[nRH]  = espoint.phi();
+      
+      nt_rhES_z[nRH] = rhid.zside();
+      nt_rhES_p[nRH] = rhid.plane();
+      nt_rhES_x[nRH] = rhid.six();
+      nt_rhES_y[nRH] = rhid.siy();
+      nt_rhES_s[nRH] = rhid.strip();
+      
+      nt_rhES_t[nRH] = esItr->time();
+      nt_rhES_e[nRH] = esItr->energy();
+      nt_rhES_status[nRH] = esItr->recoFlag();
+      nRH++;
+
+
 
       h_recHits_ES_energy -> Fill(esItr->energy());
       h_recHits_ES_time   -> Fill(esItr->time());
@@ -543,12 +614,12 @@ void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSe
   //************* CLUSTER LAZY TOOLS                                                                                                                             
   EcalClusterLazyTools lazyTools(ev,iSetup,recHitCollection_EB_,recHitCollection_EE_);
 
+  nSC = 0;
   const reco::GsfElectronCollection * electronCollection = electronHandle.product();
 
   //  for(reco::GsfElectronCollection::const_iterator eleIt=electrons.begin(); eleIt!=electrons.end(); ++eleIt){
   //  for(reco::GsfElectronCollection::const_iterator eleIt=electronHandle->begin(); eleIt!=electronHandle->end(); ++eleIt){
   for(reco::GsfElectronCollection::const_iterator eleIt=electronCollection->begin(); eleIt!=electronCollection->end(); eleIt++) {
-    
     reco::SuperClusterRef sClRef = eleIt->superCluster();
     
 
@@ -559,26 +630,53 @@ void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSe
     //    std::cout << " sClRef->y() = " << sClRef->y() << std::endl;
     //    std::cout << " sClRef->energy() = " << sClRef->energy() << std::endl;
     //    std::cout << " ele1_ESHits_plane1.at(0) = " << ele1_ESHits_plane1.at(0) << std::endl;
-    if(ele1_ESHits_plane1.at(0) != 0.)
-      h_CentralStrip_P1_E->Fill(ele1_ESHits_plane1.at(0));
-    if(ele1_ESHits_plane2.at(0) != 0.)
+    h_CentralStrip_P1_E->Fill(ele1_ESHits_plane1.at(0));
     h_CentralStrip_P2_E->Fill(ele1_ESHits_plane2.at(0));
 
+    float totP1 = 0;
+    float totP2 = 0;
+
     for(unsigned int itr = 0; itr<ele1_ESHits_plane1.size(); ++itr){
-      if(ele1_ESHits_plane1.at(itr) != 0.){
-	plane1_stripsN_E[itr]->Fill(ele1_ESHits_plane1.at(itr));
+      if(ele1_ESHits_plane1.at(itr) != 0){
+	nt_p1_stripsN_E[itr*nSC+itr] = ele1_ESHits_plane1.at(itr);
+	//	plane1_stripsN_E[itr*nSC+itr]->Fill(ele1_ESHits_plane1.at(itr));
+	totP1+=ele1_ESHits_plane1.at(itr);
       }
     }
     for(unsigned int itr = 0; itr<ele1_ESHits_plane2.size(); ++itr){
-      if(ele1_ESHits_plane2.at(itr) != 0.){
-	plane2_stripsN_E[itr]->Fill(ele1_ESHits_plane2.at(itr));
+      if(ele1_ESHits_plane2.at(itr) != 0){
+	nt_p2_stripsN_E[itr*nSC+itr] = ele1_ESHits_plane2.at(itr);
+	//	plane2_stripsN_E[itr*nSC+itr]->Fill(ele1_ESHits_plane2.at(itr));
+	totP2+=ele1_ESHits_plane2.at(itr);
       }
     }
-      
-    if(sClRef->preshowerEnergy() != 0.) std::cout << " >>> energy >> 0 ######################## = " << sClRef->preshowerEnergy() << std::endl;
-    //    h_ESenergy->Fill(sClRef->preshowerEnergy());
-  }
 
+
+    plane2_vs_plane1->Fill(totP2, totP1);
+    sclusterEnergy->Fill(sClRef->rawEnergy());
+    ES_over_sclusterEnergy->Fill(sClRef->preshowerEnergy()/sClRef->rawEnergy());
+
+    nt_scEn[nSC] = sClRef->energy();
+    nt_scX[nSC] = sClRef->x();
+    nt_scY[nSC] = sClRef->y();
+    nt_scZ[nSC] = sClRef->z();
+    nt_scEta[nSC] = sClRef->eta();
+    nt_scPhi[nSC] = sClRef->phi();
+    nt_scRawEn[nSC] = sClRef->rawEnergy();
+    nt_scESEn[nSC] = sClRef->preshowerEnergy();
+    nt_scEtaWidth[nSC] = sClRef->etaWidth();
+    nt_scPhiWidth[nSC] = sClRef->phiWidth();
+
+    ++nSC;
+    //   if(sClRef->preshowerEnergy() != 0.) std::cout << " >>> energy >> 0 ######################## = " << sClRef->preshowerEnergy() << std::endl;
+    //    h_ESenergy->Fill(sClRef->preshowerEnergy());
+  } // loop over ele
+
+
+  nElectronsPerEvents->Fill(nSC);
+
+
+  tree_->Fill();
 }
    
   //--------------------------------------------------------
@@ -600,7 +698,7 @@ EcalValidation_ES::beginJob()
 void 
 EcalValidation_ES::endJob() {
   
-  h_numberOfEvents->Fill(0.,naiveId_);
+  //  h_numberOfEvents->SetBinContent(1, totEvents);
   
   // int nBins_noise = 30; 
   // TFile* noise_histos = new TFile("noise_histos.root","RECREATE");
@@ -610,7 +708,7 @@ EcalValidation_ES::endJob() {
   /// ---------- Compute and Fill RecHits occupancy deviations  
 
 
-
+  nEvents->SetBinContent(1, totEvents);
 
 
 }
