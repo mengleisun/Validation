@@ -91,7 +91,9 @@ using namespace reco;
 //
 EcalValidation_ES::EcalValidation_ES(const edm::ParameterSet& ps)
 {
+  std::cout << " welcome in constructor " << std::endl;
   //now do what ever initialization is needed
+  isMC_                      = ps.getUntrackedParameter<bool>("isMC",   false);
   recHitCollection_EB_       = ps.getParameter<edm::InputTag>("recHitCollection_EB");
   recHitCollection_EE_       = ps.getParameter<edm::InputTag>("recHitCollection_EE");
   recHitCollection_ES_       = ps.getParameter<edm::InputTag>("recHitCollection_ES");
@@ -100,6 +102,7 @@ EcalValidation_ES::EcalValidation_ES(const edm::ParameterSet& ps)
   esClusterCollectionY_      = ps.getParameter<edm::InputTag>("ClusterCollectionY_ES");
   //esDigiCollection_          = ps.getParameter<edm::InputTag>("esDigiCollection");
 
+  EleTagMC_                   = ps.getParameter<edm::InputTag>("EleTagMC");
   EleTag_                     = ps.getParameter<edm::InputTag>("EleTag");
   PhoTag_                     = ps.getParameter<edm::InputTag>("PhoTag");
   saveDigis_                  = ps.getUntrackedParameter<bool>("saveDigis",   false);
@@ -245,6 +248,7 @@ EcalValidation_ES::~EcalValidation_ES()
 // ------------ method called to for each event  ------------
 void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSetup)
 {
+  //  std::cout << " >>> sei nell'analyzer " << std::endl;
 
   ++totEvents;
 
@@ -605,23 +609,39 @@ void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSe
  
   /////////// ES saturation 
   //************* ELECTRONS                                                                                                                                                               
-  //Handle<View<reco::GsfElectron> > electronHandle;
-  //ev.getByLabel(EleTag_,electronHandle);
-  //View<reco::GsfElectron> electrons = *electronHandle;
+  //MC
+  
+  Handle<View<reco::GsfElectron> > electronHandleMC;
+  //if(isMC_) 
+  ev.getByLabel(EleTagMC_,electronHandleMC);
+  View<reco::GsfElectron> electrons = *electronHandleMC;
+  
+  /*
+  //DATA
   Handle<reco::GsfElectronCollection> electronHandle;
+  //if(!isMC_)  
   ev.getByLabel(EleTag_, electronHandle);
-
+  const reco::GsfElectronCollection * electronCollection = electronHandle.product();
+  */
   //************* CLUSTER LAZY TOOLS                                                                                                                             
   EcalClusterLazyTools lazyTools(ev,iSetup,recHitCollection_EB_,recHitCollection_EE_);
-
   nSC = 0;
-  const reco::GsfElectronCollection * electronCollection = electronHandle.product();
+  //  std::cout << " >>> nSC = " << nSC << std::endl;
+  reco::SuperClusterRef sClRef;
 
-  //  for(reco::GsfElectronCollection::const_iterator eleIt=electrons.begin(); eleIt!=electrons.end(); ++eleIt){
-  //  for(reco::GsfElectronCollection::const_iterator eleIt=electronHandle->begin(); eleIt!=electronHandle->end(); ++eleIt){
-  for(reco::GsfElectronCollection::const_iterator eleIt=electronCollection->begin(); eleIt!=electronCollection->end(); eleIt++) {
-    reco::SuperClusterRef sClRef = eleIt->superCluster();
-    
+  /*
+  //DATA
+  for(reco::GsfElectronCollection::const_iterator eleIt=electronCollection->begin(); eleIt!=electronCollection->end(); ++eleIt++){
+    sClRef = eleIt->superCluster();
+    std::cout << " >>> dentro for " << std::endl;
+  */
+
+  
+  //MC
+  for(unsigned int eleIt=0; eleIt<electrons.size(); ++eleIt){
+    reco::GsfElectron electron = electrons.at(eleIt);
+    sClRef = electron.superCluster();
+
 
     // ES variables   
     std::vector<float>    ele1_ESHits_plane1 = lazyTools.getESHits(sClRef->x(), sClRef->y(), sClRef->z(), ESrechits_map, geometry, topologyES, 0, 1);

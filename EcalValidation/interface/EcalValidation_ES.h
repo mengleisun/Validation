@@ -59,6 +59,7 @@ class EcalValidation_ES : public edm::EDAnalyzer {
       protected:
 
 	 // ----------member data ---------------------------
+	 bool isMC_;
 	 edm::InputTag recHitCollection_EB_;
 	 edm::InputTag recHitCollection_EE_;
 	 edm::InputTag recHitCollection_ES_;
@@ -67,6 +68,7 @@ class EcalValidation_ES : public edm::EDAnalyzer {
 	 edm::InputTag esClusterCollectionY_ ;
 	 edm::InputTag esDigiCollection_ ;
 
+	 edm::InputTag EleTagMC_;
 	 edm::InputTag EleTag_;
 	 edm::InputTag PhoTag_;
 	 bool saveDigis_;

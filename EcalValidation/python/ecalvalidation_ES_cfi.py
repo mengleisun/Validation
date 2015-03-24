@@ -1,6 +1,7 @@
 import FWCore.ParameterSet.Config as cms
 
 ecalvalidationES = cms.EDAnalyzer("EcalValidation_ES",
+    isMC                      = cms.untracked.bool(False),
     recHitCollection_EB       = cms.InputTag("ecalRecHit","EcalRecHitsEB"),
     recHitCollection_EE       = cms.InputTag("ecalRecHit","EcalRecHitsEE"),
     recHitCollection_ES       = cms.InputTag("ecalPreshowerRecHit","EcalRecHitsES"),
@@ -11,7 +12,7 @@ ecalvalidationES = cms.EDAnalyzer("EcalValidation_ES",
     #esDigiCollection          = cms.InputTag("simEcalUnsuppressedDigis",""),
 
     EleTag                    = cms.InputTag("gsfElectrons"),
-    #EleTag                    = cms.InputTag("gedGsfElectrons"),
+    EleTagMC                  = cms.InputTag("gedGsfElectrons"),
     PhoTag                    = cms.InputTag("photons"),
     saveDigis                 = cms.untracked.bool(False),
     SaveSrFlag                = cms.untracked.bool(True),
