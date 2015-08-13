@@ -60,9 +60,12 @@ class EcalValidation_ES : public edm::EDAnalyzer {
 
 	 // ----------member data ---------------------------
 	 bool isMC_;
-	 edm::InputTag recHitCollection_EB_;
-	 edm::InputTag recHitCollection_EE_;
-	 edm::InputTag recHitCollection_ES_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EB_;
+	 edm::EDGetTokenT<EcalRecHitCollection>	recHitCollection_EE_; 
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_ES_;
+	 /* edm::InputTag recHitCollection_EB_IT_; */
+	 /* edm::InputTag recHitCollection_EE_IT_; */
+	 edm::InputTag recHitCollection_ES_IT_;
          edm::InputTag redRecHitCollection_ES_;
 	 edm::InputTag esClusterCollectionX_ ;
 	 edm::InputTag esClusterCollectionY_ ;
