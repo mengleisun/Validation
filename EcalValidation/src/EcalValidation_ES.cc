@@ -94,9 +94,16 @@ EcalValidation_ES::EcalValidation_ES(const edm::ParameterSet& ps)
   std::cout << " welcome in constructor " << std::endl;
   //now do what ever initialization is needed
   isMC_                      = ps.getUntrackedParameter<bool>("isMC",   false);
-  recHitCollection_EB_       = ps.getParameter<edm::InputTag>("recHitCollection_EB");
-  recHitCollection_EE_       = ps.getParameter<edm::InputTag>("recHitCollection_EE");
-  recHitCollection_ES_       = ps.getParameter<edm::InputTag>("recHitCollection_ES");
+   // recHitCollection_EB_       = ps.getParameter<edm::InputTag>("recHitCollection_EB");
+   // recHitCollection_EE_       = ps.getParameter<edm::InputTag>("recHitCollection_EE");
+   // recHitCollection_ES_       = ps.getParameter<edm::InputTag>("recHitCollection_ES");
+  recHitCollection_ES_IT_       = ps.getParameter<edm::InputTag>("recHitCollection_ES");
+
+
+  recHitCollection_EB_ = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_EB"));  
+  recHitCollection_EE_ = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_EE"));  
+  recHitCollection_ES_ = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_ES"));  
+
   redRecHitCollection_ES_    = ps.getParameter<edm::InputTag>("redRecHitCollection_ES");
   esClusterCollectionX_      = ps.getParameter<edm::InputTag>("ClusterCollectionX_ES");
   esClusterCollectionY_      = ps.getParameter<edm::InputTag>("ClusterCollectionY_ES");
@@ -268,7 +275,7 @@ void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSe
   const ESPedestals *peds = ESPed.product();
 
   edm::Handle<ESRecHitCollection> recHitsES;
-  ev.getByLabel (recHitCollection_ES_, recHitsES) ;
+  ev.getByLabel (recHitCollection_ES_IT_, recHitsES) ;
   const ESRecHitCollection* thePreShowerRecHits = recHitsES.product () ;
 
   if ( ! recHitsES.isValid() ) {
@@ -624,7 +631,7 @@ void EcalValidation_ES::analyze(const edm::Event& ev, const edm::EventSetup& iSe
   const reco::GsfElectronCollection * electronCollection = electronHandle.product();
   */
   //************* CLUSTER LAZY TOOLS                                                                                                                             
-  EcalClusterLazyTools lazyTools(ev,iSetup,recHitCollection_EB_,recHitCollection_EE_);
+  EcalClusterLazyTools lazyTools(ev,iSetup,recHitCollection_EB_,recHitCollection_EE_,recHitCollection_ES_);
   nSC = 0;
   //  std::cout << " >>> nSC = " << nSC << std::endl;
   reco::SuperClusterRef sClRef;
