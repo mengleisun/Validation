@@ -1053,7 +1053,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       if ( itr -> energy() > ethrEB_ ){
 	h_recHits_EB_time          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2          -> Fill( itr -> chi2() );
-	h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	//	h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	h_recHits_EB_occupancy     -> Fill( ebid.iphi() , ebid.ieta() );
 	h_recHits_EB_deviation     -> Fill( ebid.iphi() , ebid.ieta() );
 	h_recHits_EB_iPhiOccupancy -> Fill( ebid.iphi() );
@@ -1077,7 +1077,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       if ( itr -> energy() > ethrEB_ ){
 	h_recHits_EB_time_cleaned          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2_cleaned          -> Fill( itr -> chi2() );
-	h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
+	//	h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
       }
 
       // max E rec hit - cleaned
@@ -1461,7 +1461,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 	if (  itr -> energy() > ethrEE_ ){
 	  h_recHits_EEP_time          -> Fill( itr -> time() );
 	  h_recHits_EEP_Chi2          -> Fill( itr -> chi2() );
-	  h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	  //	  h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEP_occupancy     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEP_deviation     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEP_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
@@ -1540,7 +1540,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 	if (  itr -> energy() > ethrEE_ ) {
 	  h_recHits_EEM_time          -> Fill( itr -> time() );
 	  h_recHits_EEM_Chi2          -> Fill( itr -> chi2() );
-	  h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	  //	  h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEM_occupancy     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_deviation     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
