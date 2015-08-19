@@ -28,7 +28,7 @@ ecalvalidation = cms.EDAnalyzer("EcalValidationDigiless",
     
     tracks                    = cms.InputTag("generalTracks"),
     beamSpot                  = cms.InputTag("offlineBeamSpot"),
-    jets                      = cms.InputTag("ak5CaloJets"),
+    jets                      = cms.InputTag("ak4CaloJets"),
 
                                     
     #ethrEB = cms.double(0.8),
