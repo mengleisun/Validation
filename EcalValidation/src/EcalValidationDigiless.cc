@@ -168,6 +168,7 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
 
   naiveId_ = 0;
 
+  /*
   noisyChannelsFileEB_cut6.open("noisyChannelsEB_cut6.txt");
   noisyChannelsFileEEP_cut6.open("noisyChannelsEEP_cut6.txt");
   noisyChannelsFileEEM_cut6.open("noisyChannelsEEM_cut6.txt");
@@ -177,7 +178,8 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   noisyChannelsFileSC.open("noisyChannelsSC.txt");
    
   f_noisyChannelsSC = fopen("noisyChannelsSC.txt","r");
-  
+  */
+
   // histos 
   
   edm::Service<TFileService> fs;
@@ -191,6 +193,7 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   h_numberOfEvents = fs->make<TH1D>("h_numberOfEvents","h_numberOfEvents",10,0,10);
    
   h_PV_n = fs->make<TH1D>("h_PV_n","h_PV_n",50,0.,50.);
+  h_PV_cut_n = fs->make<TH1D>("h_PV_cut_n","h_PV_cut_n",50,0.,50.);
   
   // ReducedRecHits ----------------------------------------------
   // ... barrel 
@@ -642,6 +645,9 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   edm::Handle<reco::VertexCollection> vertexes;
   ev.getByLabel(PVTag_, vertexes); 
   if(vertexes->size() != 1) h_PV_n->Fill(vertexes->size());
+
+  if(vertexes->size() != 10.) return;
+  h_PV_cut_n->Fill(vertexes->size());
   
   //Get the BS position
   edm::Handle<reco::BeamSpot> recoBeamSpotHandle;
@@ -662,6 +668,10 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   iSetup.get<EcalLaserDbRecord>().get(theLaser);
   
   naiveId_++;
+
+
+  //  int runN = ev.id().run();
+  //  std::cout << "runN = " << runN << std::endl;
 
   // calo geometry
   edm::ESHandle<CaloGeometry> pGeometry;
@@ -785,7 +795,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       if(h_DB_noiseMap_EB->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0) h_DB_noiseMap_EB->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut6->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 6.){
          h_DB_noiseMap_EB_cut6->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-         noisyChannelsFileEB_cut6 << ebid.iphi() << " " << ebid.ieta() << std::endl;
+	 //         noisyChannelsFileEB_cut6 << ebid.iphi() << " " << ebid.ieta() << std::endl;
       }
       if(h_DB_noiseMap_EB_cut5_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 5.5) h_DB_noiseMap_EB_cut5_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 5.) h_DB_noiseMap_EB_cut5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
@@ -794,7 +804,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       if(h_DB_noiseMap_EB_cut3_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 3.5) h_DB_noiseMap_EB_cut3_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut3->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 3.){
          h_DB_noiseMap_EB_cut3->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-         noisyChannelsFileEB_cut3 << ebid.iphi() << " " << ebid.ieta() << std::endl;
+	 //         noisyChannelsFileEB_cut3 << ebid.iphi() << " " << ebid.ieta() << std::endl;
       }
 
       float seedLaserCorrection = theLaser->getLaserCorrection(ebid, ev.time());
@@ -993,7 +1003,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEP->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEP->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
       	   if(h_DB_noiseMap_EEP_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.){
               h_DB_noiseMap_EEP_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-              noisyChannelsFileEEP_cut6 << eeid.ix() << " " << eeid.iy() << std::endl;
+	      //              noisyChannelsFileEEP_cut6 << eeid.ix() << " " << eeid.iy() << std::endl;
            }
            if(h_DB_noiseMap_EEP_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEP_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEP_cut5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.) h_DB_noiseMap_EEP_cut5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
@@ -1002,7 +1012,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEP_cut3_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.5) h_DB_noiseMap_EEP_cut3_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEP_cut3->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.){
               h_DB_noiseMap_EEP_cut3->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-              noisyChannelsFileEEP_cut3 << eeid.ix() << " " << eeid.iy() << std::endl;
+	      //              noisyChannelsFileEEP_cut3 << eeid.ix() << " " << eeid.iy() << std::endl;
            }
       }
       
@@ -1010,7 +1020,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEM->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEM->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
       	   if(h_DB_noiseMap_EEM_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.){
               h_DB_noiseMap_EEM_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-              noisyChannelsFileEEM_cut6 << eeid.ix() << " " << eeid.iy() << std::endl;
+	      //              noisyChannelsFileEEM_cut6 << eeid.ix() << " " << eeid.iy() << std::endl;
            }
            if(h_DB_noiseMap_EEM_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEM_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEM_cut5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.) h_DB_noiseMap_EEM_cut5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
@@ -1019,7 +1029,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEM_cut3_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.5) h_DB_noiseMap_EEM_cut3_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEM_cut3->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.){
               h_DB_noiseMap_EEM_cut3->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-              noisyChannelsFileEEM_cut3 << eeid.ix() << " " << eeid.iy() << std::endl;
+	      //              noisyChannelsFileEEM_cut3 << eeid.ix() << " " << eeid.iy() << std::endl;
            }
       }
 
@@ -2031,7 +2041,7 @@ EcalValidationDigiless::beginJob()
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 EcalValidationDigiless::endJob() {
-  
+  /*  
   noisyChannelsFileEB_cut6.close();
   noisyChannelsFileEEP_cut6.close();
   noisyChannelsFileEEM_cut6.close();
@@ -2039,7 +2049,7 @@ EcalValidationDigiless::endJob() {
   noisyChannelsFileEEP_cut3.close();
   noisyChannelsFileEEM_cut3.close();
   noisyChannelsFileSC.close();
-
+  */
   h_numberOfEvents ->Fill(0.,naiveId_);
   
   /// ---------- Compute and Fill RecHits occupancy deviations
