@@ -98,13 +98,13 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 	 double scEtThrEB_;
 	 double scEtThrEE_;
          
-         ofstream noisyChannelsFileEB_cut6;
-         ofstream noisyChannelsFileEEP_cut6;
-         ofstream noisyChannelsFileEEM_cut6;
-         ofstream noisyChannelsFileEB_cut3;
-         ofstream noisyChannelsFileEEP_cut3;
-         ofstream noisyChannelsFileEEM_cut3;
-         ofstream noisyChannelsFileSC;
+	 std::ofstream noisyChannelsFileEB_cut6;
+	 std::ofstream noisyChannelsFileEEP_cut6;
+	 std::ofstream noisyChannelsFileEEM_cut6;
+	 std::ofstream noisyChannelsFileEB_cut3;
+	 std::ofstream noisyChannelsFileEEP_cut3;
+	 std::ofstream noisyChannelsFileEEM_cut3;
+	 std::ofstream noisyChannelsFileSC;
          FILE *f_noisyChannelsSC;
 
 
@@ -172,6 +172,7 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 	 
 	 TH1D *h_numberOfEvents;
          TH1D* h_PV_n;
+         TH1D* h_PV_cut_n;
          
 	 // ReducedRecHits ----------------------------------------------
 	 // ... barrel 
