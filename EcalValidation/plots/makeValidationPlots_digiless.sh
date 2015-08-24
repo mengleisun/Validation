@@ -72,7 +72,7 @@ echo 'htmldir ' ${htmldir}
 cd ../../../
 my_cmssw_base=`\pwd`
 work_dir=${my_cmssw_base}/Validation/EcalValidation
-echo $work_dir
+echo "workdir = " $work_dir
 cd -
 
 out_dir=${file1}_vs_${file2};
@@ -85,6 +85,8 @@ mkdir ${plots_dir}
 
 cp ${work_dir}/test/crab/${file1}/EcalValidation_${file1}.root ${plots_dir}
 cp ${work_dir}/test/crab/${file2}/EcalValidation_${file2}.root ${plots_dir}
+#cp ${work_dir}/test/${file1}/${file1}.root ${plots_dir}
+#cp ${work_dir}/test/${file2}/${file2}.root ${plots_dir}
 cd ${my_cmssw_base}/Validation/EcalValidation/data/macro
 
 
@@ -154,6 +156,7 @@ cat > ${plots_dir}/index.html <<EOF
  <ul>
  <li><A href="#RecHitsMultiplicity"> Rec Hits Multiplicity </A><BR>
  <li><A href="#RechitSRP"> Rechit SRP </A><BR>
+ <li><A href="#ESgoodRecHits"> ES good recHits </A><BR>
  <li><A href="#RecHitsEnergy"> Rec Hits Energy</A><BR>
  <li><A href="#RecHitsEnergyMax"> Rec Hits Max Energy </A><BR>
  <li><A href="#RecHitsEtaPhi"> Rec Hits Eta/Phi </A><BR>
@@ -165,7 +168,12 @@ cat > ${plots_dir}/index.html <<EOF
  <li><A href="#ClusRecHitsRecoFlag"> Cluster Rec Hits Reco Flag</A><BR>
  <li><A href="#RecHitsOccupancyiPhiiEta_0"> RecHits Occupancy iPhi-iEta (${file2}) </A><BR>
  <li><A href="#RecHitsOccupancyiPhiiEta_1"> RecHits Occupancy iPhi-iEta (${file1}) </A><BR>
- <li><A href="#RecHitsOccupancy"> RecHits Occupancy (EB) </A><BR>
+ <li><A href="#RecHitsOccupancyEB_0"> RecHits Occupancy (EB) (${file2}) </A><BR>
+ <li><A href="#RecHitsOccupancyEB_1"> RecHits Occupancy (EB) (${file1}) </A><BR>
+ <li><A href="#RecHitsOccupancyEE_0"> RecHits Occupancy (EE) (${file2}) </A><BR>
+ <li><A href="#RecHitsOccupancyEE_1"> RecHits Occupancy (EE) (${file1}) </A><BR>
+ <li><A href="#RecHitsOccupancyES_0"> RecHits Occupancy (ES) (${file2}) </A><BR>
+ <li><A href="#RecHitsOccupancyES_1"> RecHits Occupancy (ES) (${file1}) </A><BR>
  <li><A href="#RecHitsSumEt"> RecHits SumEt </A><BR>
  
  
@@ -202,6 +210,14 @@ cat > ${plots_dir}/index.html <<EOF
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_ES_size.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size.png"> </A>
 
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_size_F+.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size_F+.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_size_F-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size_F-.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_size_R+.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size_R+.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_size_R-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size_R-.png"> </A>
+
 <hr>
 
 <h3><A name="RechitSRP"> Rechit SRP </h3>
@@ -210,6 +226,16 @@ cat > ${plots_dir}/index.html <<EOF
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_EE_SRP.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EE_SRP.png"> </A>
 </A>
+
+<hr>
+
+<h3><A name="ESgoodRecHits"> ES good recHits </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_size_gr.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size_gr.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_time_gr.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_time_gr.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_energy_gr.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_energy_gr.png"> </A>
 
 <hr>
 
@@ -222,6 +248,14 @@ cat > ${plots_dir}/index.html <<EOF
 <A HREF=${httpdir}/${out_dir}/h_recHits_EEM_energy.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EEM_energy.png"> </A>
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_ES_energy.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_energy.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_energy_F+.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_energy_F+.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_energy_F-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_energy_F-.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_energy_R-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_energy_R+.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_energy_R-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_energy_R-.png"> </A>
 
 <hr>
 
@@ -261,6 +295,14 @@ cat > ${plots_dir}/index.html <<EOF
 <A HREF=${httpdir}/${out_dir}/h_recHits_EEM_time.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EEM_time.png"> </A>
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_ES_time.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_time.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_time_F+.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_time_F+.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_time_F-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_time_F-.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_time_R+.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_time_R+.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_time_R-.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_time_R-.png"> </A>
 
 <hr>
 
@@ -341,11 +383,71 @@ cat > ${plots_dir}/index.html <<EOF
 <hr>
 
 
-<h3><A name="RecHitsOccupancy"> RecHits Occupancy (EB) </h3>
+<h3><A name="RecHitsOccupancyEB_0"> RecHits Occupancy (EB) (${file2}) </h3>
 
-<A HREF=${httpdir}/${out_dir}/h_recHits_EB_iPhiOccupancy.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EB_iPhiOccupancy.png"> </A>
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_occupancy_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EB_occupancy_0.png"> </A>
 
-<A HREF=${httpdir}/${out_dir}/h_h_recHits_EB_iEtaOccupancy.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EB_iEtaOccupancy.png"> </A>
+<hr>
+
+<h3><A name="RecHitsOccupancyEB_1"> RecHits Occupancy (EB) (${file1}) </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_occupancy_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EB_occupancy_1.png"> </A>
+
+<hr>
+
+<h3><A name="RecHitsOccupancyEE_0"> RecHits Occupancy (EE) (${file2}) </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EEP_occupancy_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EEP_occupancy_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EEM_occupancy_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EEM_occupancy_0.png"> </A>
+
+<hr>
+
+<h3><A name="RecHitsOccupancyEE_1"> RecHits Occupancy (EE) (${file1}) </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EEP_occupancy_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EEP_occupancy_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EEM_occupancy_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EEM_occupancy_1.png"> </A>
+
+<hr>
+
+<h3><A name="RecHitsOccupancyES_0"> RecHits Occupancy (ES) (${file2}) </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_gr_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_gr_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_gr_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_gr_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_gr_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_gr_0.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_gr_0.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_gr_0.png"> </A>
+
+<hr>
+
+<h3><A name="RecHitsOccupancyES_1"> RecHits Occupancy (ES) (${file1}) </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_gr_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_gr_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_gr_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_gr_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_gr_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_gr_1.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_gr_1.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_gr_1.png"> </A>
 
 <hr>
 

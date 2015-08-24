@@ -538,6 +538,11 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 	 
 	 // PRESHOWER ----------------------------------------------
 	 
+	 //goodRecHits
+	 TH1D *h_recHits_ES_size_gr;
+	 TH1D *h_recHits_ES_energy_gr;
+	 TH1D *h_recHits_ES_time_gr;
+
 	 TH1D *h_recHits_ES_size;
 	 TH1D *h_recHits_ES_size_F[2];
 	 TH1D *h_recHits_ES_size_R[2];
@@ -554,6 +559,11 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 	 TH1D *h_recHits_ES_time;
 	 TH1D *h_recHits_ES_time_F[2];
 	 TH1D *h_recHits_ES_time_R[2];
+
+	 TH2D* h_recHits_ES_occupancy_F[2];
+	 TH2D* h_recHits_ES_occupancy_R[2];
+	 TH2D* h_recHits_ES_occupancy_F_gr[2];
+	 TH2D* h_recHits_ES_occupancy_R_gr[2];
 
 	 TH1D *h_esClusters_energy_plane1;
 	 TH1D *h_esClusters_energy_plane2;

@@ -557,6 +557,10 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   h2_superClusters_EE_seedTimeVsEnergy = fs->make<TH2D>("h2_superClusters_EE_seedTimeVsEnergy","h2_superClusters_EE_seedTimeVsEnergy",2000,0.,400.,400,-100.,100.);
   
   // preshower
+  h_recHits_ES_size_gr           = fs->make<TH1D>("h_recHits_ES_size_gr","h_recHits_ES_size_gr",1000,0.,10000);
+  h_recHits_ES_energy_gr         = fs->make<TH1D>("h_recHits_ES_energy_gr","h_recHits_ES_energy_gr",50000,0.,5.);
+  h_recHits_ES_time_gr           = fs->make<TH1D>("h_recHits_ES_time_gr","h_recHits_ES_time_gr",400,-100.,100.);
+
   h_recHits_ES_size           = fs->make<TH1D>("h_recHits_ES_size","h_recHits_ES_size",1000,0.,10000);
   h_recHits_ES_size_F[0]      = fs->make<TH1D>("h_recHits_ES_size_F+","h_recHits_ES_size_F+",1000,0.,10000);
   h_recHits_ES_size_F[1]      = fs->make<TH1D>("h_recHits_ES_size_F-","h_recHits_ES_size_F-",1000,0.,10000);
@@ -581,8 +585,18 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   h_recHits_ES_time_R[0]      = fs->make<TH1D>("h_recHits_ES_time_R+","h_recHits_ES_time_R+",400,-100.,100.);
   h_recHits_ES_time_R[1]      = fs->make<TH1D>("h_recHits_ES_time_R-","h_recHits_ES_time_R-",400,-100.,100.);
 
-  h_esClusters_energy_plane1 = fs->make<TH1D>("h_esClusters_energy_plane1","h_esClusters_energy_plane1",1000,0.,0.01);
-  h_esClusters_energy_plane2 = fs->make<TH1D>("h_esClusters_energy_plane2","h_esClusters_energy_plane2",1000,0.,0.01);
+  h_recHits_ES_occupancy_F[0] = fs->make<TH2D>("h_recHits_ES_occupancy_F+", "h_recHits_ES_occupancy_F+",40, 0., 40., 40, 0., 41.);
+  h_recHits_ES_occupancy_F[1] = fs->make<TH2D>("h_recHits_ES_occupancy_F-", "h_recHits_ES_occupancy_F-",40, 0., 40., 40, 0., 41.);
+  h_recHits_ES_occupancy_R[0] = fs->make<TH2D>("h_recHits_ES_occupancy_R+", "h_recHits_ES_occupancy_R+",40, 0., 40., 40, 0., 41.);
+  h_recHits_ES_occupancy_R[1] = fs->make<TH2D>("h_recHits_ES_occupancy_R-", "h_recHits_ES_occupancy_R-",40, 0., 40., 40, 0., 41.);
+
+  h_recHits_ES_occupancy_F_gr[0] = fs->make<TH2D>("h_recHits_ES_occupancy_F+_gr", "h_recHits_ES_occupancy_F+_gr",41, 0., 41., 41, 0., 41.);
+  h_recHits_ES_occupancy_F_gr[1] = fs->make<TH2D>("h_recHits_ES_occupancy_F-_gr", "h_recHits_ES_occupancy_F-_gr",41, 0., 41., 41, 0., 41.);
+  h_recHits_ES_occupancy_R_gr[0] = fs->make<TH2D>("h_recHits_ES_occupancy_R+_gr", "h_recHits_ES_occupancy_R+_gr",41, 0., 41., 41, 0., 41.);
+  h_recHits_ES_occupancy_R_gr[1] = fs->make<TH2D>("h_recHits_ES_occupancy_R-_gr", "h_recHits_ES_occupancy_R-_gr",41, 0., 41., 41, 0., 41.);
+
+  h_esClusters_energy_plane1 = fs->make<TH1D>("h_esClusters_energy_plane1","h_esClusters_energy_plane1",1000,0.,0.05);
+  h_esClusters_energy_plane2 = fs->make<TH1D>("h_esClusters_energy_plane2","h_esClusters_energy_plane2",1000,0.,0.05);
   h_esClusters_energy_ratio  = fs->make<TH1D>("h_esClusters_energy_ratio","h_esClusters_energy_ratio",100,0.,10.);
 
   // Pi0 ----------------------------------------------
@@ -1855,37 +1869,61 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   int nF[2]={0,0};
   int nR[2]={0,0};
 
+  int nGoodRecHits = 0;
+
   for (ESRecHitCollection::const_iterator esItr = thePreShowerRecHits->begin(); esItr != thePreShowerRecHits->end(); ++esItr) 
     {
+
+      ESDetId id = ESDetId(esItr->id());
+
+      //goodRecHits;
+      if(esItr->recoFlag() != 14 && esItr->recoFlag() != 1 && (esItr->recoFlag() < 5 || esItr->recoFlag() > 10)){
+	h_recHits_ES_energy_gr -> Fill(esItr->energy());
+	h_recHits_ES_time_gr   -> Fill(esItr->time());
+	++nGoodRecHits;
+	
+	if( id.plane()==1 && id.zside() > 0 ) h_recHits_ES_occupancy_F_gr[0]->Fill(id.six(), id.siy());
+	if( id.plane()==1 && id.zside() < 0 ) h_recHits_ES_occupancy_F_gr[1]->Fill(id.six(), id.siy());
+	if( id.plane()==2 && id.zside() > 0 ) h_recHits_ES_occupancy_R_gr[0]->Fill(id.six(), id.siy());
+	if( id.plane()==2 && id.zside() < 0 ) h_recHits_ES_occupancy_R_gr[1]->Fill(id.six(), id.siy());
+
+
+      }
       
       h_recHits_ES_energy -> Fill(esItr->energy()); 
       h_recHits_ES_time   -> Fill(esItr->time()); 
       if (esItr -> energy() > maxRecHitEnergyES ) maxRecHitEnergyES = esItr -> energy() ;
 
-      ESDetId id = ESDetId(esItr->id());
+
       // front plane : id.plane()==1
       if ( id.plane()==1 && id.zside() > 0 ){
 	h_recHits_ES_energy_F[0]-> Fill( esItr->energy() );
 	h_recHits_ES_time_F[0]  -> Fill( esItr->time() ); 
+	h_recHits_ES_occupancy_F[0]->Fill(id.six(), id.siy());
 	nF[0]++;
       }
       if ( id.plane()==1 && id.zside() < 0 ){
 	h_recHits_ES_energy_F[1]-> Fill( esItr->energy() );
 	h_recHits_ES_time_F[1]  -> Fill( esItr->time() );
 	nF[1]++;      
+	h_recHits_ES_occupancy_F[1]->Fill(id.six(), id.siy());
       }
       // rear plane : id.plane()==2
       if ( id.plane()==2 && id.zside() > 0 ){
 	h_recHits_ES_energy_R[0]-> Fill( esItr->energy() );
 	h_recHits_ES_time_R[0]  -> Fill( esItr->time() );
 	nR[0]++;
+	h_recHits_ES_occupancy_R[0]->Fill(id.six(), id.siy());
       }
       if ( id.plane()==2 && id.zside() < 0 ){
 	h_recHits_ES_energy_R[1]->Fill( esItr->energy() );
 	h_recHits_ES_time_R[1]  -> Fill( esItr->time() );
 	nR[1]++;
+	h_recHits_ES_occupancy_R[1]->Fill(id.six(), id.siy());
       }      
     } // end loop over ES rec Hits
+
+  h_recHits_ES_size_gr->Fill(nGoodRecHits);
 
   h_recHits_ES_energyMax -> Fill(maxRecHitEnergyES ); 
   h_recHits_ES_size_F[0] -> Fill( nF[0] );
