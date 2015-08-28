@@ -86,6 +86,7 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 	 edm::InputTag esRecHitCollection_;
 	 edm::InputTag esClusterCollectionX_ ;
 	 edm::InputTag esClusterCollectionY_ ;
+	 edm::InputTag basicClusterCollection_ES_;
 
 	 edm::InputTag tracks_ ;
 	 edm::InputTag beamSpot_ ;

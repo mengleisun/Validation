@@ -94,6 +94,7 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   esRecHitCollection_        = ps.getParameter<edm::InputTag>("recHitCollection_ES");
   esClusterCollectionX_      = ps.getParameter<edm::InputTag>("ClusterCollectionX_ES");
   esClusterCollectionY_      = ps.getParameter<edm::InputTag>("ClusterCollectionY_ES");
+  basicClusterCollection_ES_ = ps.getParameter<edm::InputTag>("basicClusterCollection_ES");
 
   tracks_                    = ps.getParameter<edm::InputTag>("tracks");
   beamSpot_                  = ps.getParameter<edm::InputTag>("beamSpot");
@@ -585,10 +586,10 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   h_recHits_ES_time_R[0]      = fs->make<TH1D>("h_recHits_ES_time_R+","h_recHits_ES_time_R+",400,-100.,100.);
   h_recHits_ES_time_R[1]      = fs->make<TH1D>("h_recHits_ES_time_R-","h_recHits_ES_time_R-",400,-100.,100.);
 
-  h_recHits_ES_occupancy_F[0] = fs->make<TH2D>("h_recHits_ES_occupancy_F+", "h_recHits_ES_occupancy_F+",40, 0., 40., 40, 0., 41.);
-  h_recHits_ES_occupancy_F[1] = fs->make<TH2D>("h_recHits_ES_occupancy_F-", "h_recHits_ES_occupancy_F-",40, 0., 40., 40, 0., 41.);
-  h_recHits_ES_occupancy_R[0] = fs->make<TH2D>("h_recHits_ES_occupancy_R+", "h_recHits_ES_occupancy_R+",40, 0., 40., 40, 0., 41.);
-  h_recHits_ES_occupancy_R[1] = fs->make<TH2D>("h_recHits_ES_occupancy_R-", "h_recHits_ES_occupancy_R-",40, 0., 40., 40, 0., 41.);
+  h_recHits_ES_occupancy_F[0] = fs->make<TH2D>("h_recHits_ES_occupancy_F+", "h_recHits_ES_occupancy_F+",41, 0., 41., 40, 0., 41.);
+  h_recHits_ES_occupancy_F[1] = fs->make<TH2D>("h_recHits_ES_occupancy_F-", "h_recHits_ES_occupancy_F-",41, 0., 41., 40, 0., 41.);
+  h_recHits_ES_occupancy_R[0] = fs->make<TH2D>("h_recHits_ES_occupancy_R+", "h_recHits_ES_occupancy_R+",41, 0., 41., 40, 0., 41.);
+  h_recHits_ES_occupancy_R[1] = fs->make<TH2D>("h_recHits_ES_occupancy_R-", "h_recHits_ES_occupancy_R-",41, 0., 41., 40, 0., 41.);
 
   h_recHits_ES_occupancy_F_gr[0] = fs->make<TH2D>("h_recHits_ES_occupancy_F+_gr", "h_recHits_ES_occupancy_F+_gr",41, 0., 41., 41, 0., 41.);
   h_recHits_ES_occupancy_F_gr[1] = fs->make<TH2D>("h_recHits_ES_occupancy_F-_gr", "h_recHits_ES_occupancy_F-_gr",41, 0., 41., 41, 0., 41.);
@@ -805,7 +806,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       float width = (*itped).rms(gain);
       
       //std::cout << "EB RMS-event: " << width << " - " << ebid.iphi() << " - "  << ebid.ieta() << " - " <<  naiveId_ << " - " << gain << std::endl;
-      
+
       if(h_DB_noiseMap_EB->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0) h_DB_noiseMap_EB->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut6->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 6.){
          h_DB_noiseMap_EB_cut6->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
@@ -820,14 +821,11 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
          h_DB_noiseMap_EB_cut3->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
 	 //         noisyChannelsFileEB_cut3 << ebid.iphi() << " " << ebid.ieta() << std::endl;
       }
+      
 
       float seedLaserCorrection = theLaser->getLaserCorrection(ebid, ev.time());
       if(h_DB_LaserCorrMap_EB->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0) h_DB_LaserCorrMap_EB->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,seedLaserCorrection);
-      
-      h_recHits_EB_energy        -> Fill( itr -> energy() );
-      h_recHits_EB_recoFlag      -> Fill( itr -> recoFlag() );
-      h_recHits_recoFlag         -> Fill( itr -> recoFlag() );
-      
+
       // max E rec hit
       if (itr -> energy() > maxRecHitEnergyEB ){
 	maxRecHitEnergyEB = itr -> energy() ;
@@ -885,9 +883,18 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	maxEtRecHitPhiEB    = mycell.phi();
 	ebid_MrecHitEB      = ebid;
       }       
+
+      if(itr -> energy() < ethrEB_ ) continue;
+      h_recHits_EB_recoFlag      -> Fill( itr -> recoFlag() );
+      h_recHits_recoFlag         -> Fill( itr -> recoFlag() );
+
+      h_recHits_EB_energy        -> Fill( itr -> energy() );     
+
       
-      if ( itr -> energy() > ethrEB_ ){
-	h_recHits_EB_time          -> Fill( itr -> time() );
+      //      std::cout << " recoFlag EB == " << itr->recoFlag() << std::endl;
+      if ( itr -> energy() > ethrEB_  && itr->recoFlag() == 0){
+	//	std::cout << " recoFlag EB == ok " << std::endl;
+	if(itr->timeError()!=10000) h_recHits_EB_time          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2          -> Fill( itr -> chi2() );
 	//	h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	h_recHits_EB_occupancy     -> Fill( ebid.iphi() , ebid.ieta() );
@@ -895,7 +902,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	h_recHits_EB_iPhiOccupancy -> Fill( ebid.iphi() );
 	h_recHits_EB_iEtaOccupancy -> Fill( ebid.ieta() );
       }
-
+      
       float R4 = EcalTools::swissCross( ebid, *theBarrelEcalRecHits, 0. );
       
       if ( itr -> energy() > 3. && abs(ebid.ieta())!=85 )  h_recHits_EB_E1oE4-> Fill( R4 );
@@ -911,7 +918,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       
       h_recHits_EB_energy_cleaned -> Fill( itr -> energy() );
       if ( itr -> energy() > ethrEB_ ){
-	h_recHits_EB_time_cleaned          -> Fill( itr -> time() );
+	if(itr->timeError()!=10000) h_recHits_EB_time_cleaned          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2_cleaned          -> Fill( itr -> chi2() );
 	//	h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
       }
@@ -921,7 +928,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	maxRecHitEnergyEBcleaned = itr -> energy() ;
       }  
       
-    }  
+    }
     
   h_recHits_EB_size           -> Fill( recHitsEB->size() );
   if (!hasSpike) h_recHits_EB_size_cleaned -> Fill( recHitsEB->size() );
@@ -1004,6 +1011,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	itr != theEndcapEcalRecHits->end () ; ++itr)
     {
       
+      //      std::cout << " >>> nuova recHit EE " << std::endl;
       EEDetId eeid( itr -> id() );
       GlobalPoint mycell = geometry->getPosition(itr->detid());
       
@@ -1053,22 +1061,8 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       
       double et = itr -> energy()*mycell.perp()/mycell.mag();  
        
-      if ( eeid.zside() > 0 ){
-           sumRecHitEtEEP[naiveId_-1] += et;
-           if(fabs(mycell.eta()) < 2.5) sumRecHitEtCutEEP[naiveId_-1] += et;
-      }
-      if ( eeid.zside() < 0 ){
-           sumRecHitEtEEM[naiveId_-1] += et;
-           if(fabs(mycell.eta()) < 2.5) sumRecHitEtCutEEM[naiveId_-1] += et;
-      }
-
       // EE+
       if ( eeid.zside() > 0 ){
-
-	nHitsEEP++;
-	h_recHits_EEP_energy        -> Fill( itr -> energy() );
-        h_recHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
-        h_recHits_recoFlag          -> Fill( itr -> recoFlag() );
 
 	// max E rec hit
 	if (itr -> energy() > maxRecHitEnergyEEP && 
@@ -1129,10 +1123,24 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	  maxEtRecHitPhiEEP    = mycell.phi() ;
 	  eeid_MrecHitEEP      = eeid ;
 	}
+
+	if(itr -> energy() < ethrEE_) continue;
+
+	sumRecHitEtEEP[naiveId_-1] += et;
+	if(fabs(mycell.eta()) < 2.5) sumRecHitEtCutEEP[naiveId_-1] += et;
+	 
+	nHitsEEP++;
+	h_recHits_EEP_energy        -> Fill( itr -> energy() );
+	h_recHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
+	h_recHits_recoFlag          -> Fill( itr -> recoFlag() );
+
+
 	
 	// only channels above noise
-	if (  itr -> energy() > ethrEE_ ){
-	  h_recHits_EEP_time          -> Fill( itr -> time() );
+	//	std::cout << " recoFlag EE+ == " << itr->recoFlag() << std::endl;
+	if (  itr -> energy() > ethrEE_ && itr->recoFlag() == 0){
+	  //	  std::cout << " recoFlag EE+ == ok " << std::endl;
+	  if(itr->timeError()!=10000) h_recHits_EEP_time          -> Fill( itr -> time() );
 	  h_recHits_EEP_Chi2          -> Fill( itr -> chi2() );
 	  //	  h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEP_occupancy     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
@@ -1144,12 +1152,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       
       // EE-
       if ( eeid.zside() < 0 ){
-	
-	nHitsEEM++;
-	h_recHits_EEM_energy        -> Fill( itr -> energy() );
-        h_recHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
-        h_recHits_recoFlag          -> Fill( itr -> recoFlag() );
-	
+		
 	// max E rec hit
 	if (itr -> energy() > maxRecHitEnergyEEM && 
 	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) ) {
@@ -1209,22 +1212,35 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	  eeid_MrecHitEEM      = eeid ;
 	}
 	
+	if(itr -> energy() < ethrEE_) continue;
+
+	  sumRecHitEtEEM[naiveId_-1] += et;
+	  if(fabs(mycell.eta()) < 2.5) sumRecHitEtCutEEM[naiveId_-1] += et;
+
+	  nHitsEEM++;
+	  h_recHits_EEM_energy        -> Fill( itr -> energy() );
+	  h_recHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
+	  h_recHits_recoFlag          -> Fill( itr -> recoFlag() );
+	  
 	// only channels above noise
-	if (  itr -> energy() > ethrEE_ ) {
-	  h_recHits_EEM_time          -> Fill( itr -> time() );
+	//	std::cout << " recoFlag EE- == " << itr->recoFlag() << std::endl;
+	if (  itr -> energy() > ethrEE_ && itr->recoFlag() == 0) {
+	  //		  std::cout << " recoFlag EE- == ok " << std::endl;
+	  if(itr->timeError()!=10000) h_recHits_EEM_time          -> Fill( itr -> time() );
 	  h_recHits_EEM_Chi2          -> Fill( itr -> chi2() );
 	  //	  h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEM_occupancy     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_deviation     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
 	  h_recHits_EEM_iYoccupancy   -> Fill( eeid.iy() - 0.5 );
-
 	}
-
+	//	std::cout << "post  recoFlag EE- == " << itr->recoFlag() << std::endl;
       }
 
     } // end loop over EE rec hits
    
+  //  std::cout << " fine overRecHits " << std::endl;
+
   // size
   h_recHits_EE_size    -> Fill( recHitsEE->size() );
   h_recHits_EEP_size   -> Fill( nHitsEEP );
@@ -1704,7 +1720,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
     if ( E1 > 3. ) h_superClusters_EB_E1oE4  -> Fill( 1.- E4/E1);
     
     //Fill plots for SCL seed
-    h2_superClusters_EB_seedTimeVsEnergy -> Fill ( theSeedEB->energy(), theSeedEB->time() );
+    if(theSeedEB->timeError()!=10000) h2_superClusters_EB_seedTimeVsEnergy -> Fill ( theSeedEB->energy(), theSeedEB->time() );
 
     if ( (1.- E4/E1) > 0.95  && E1 > 3. ) continue;
     
@@ -1824,7 +1840,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
                EcalClusterTools::eLeft( *itSC, theEndcapEcalRecHits, topology);
     
     //Fill plots for SCL seed
-    h2_superClusters_EE_seedTimeVsEnergy -> Fill ( theSeedEE->energy(), theSeedEE->time() );
+    if(theSeedEE->timeError()!=10000) h2_superClusters_EE_seedTimeVsEnergy -> Fill ( theSeedEE->energy(), theSeedEE->time() );
 
 
     if  ( itSC -> z() > 0 ){
@@ -1876,48 +1892,55 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 
       ESDetId id = ESDetId(esItr->id());
 
+      //      std::cout << " >>> ciao1 " << std::endl;
+
       //goodRecHits;
       if(esItr->recoFlag() != 14 && esItr->recoFlag() != 1 && (esItr->recoFlag() < 5 || esItr->recoFlag() > 10)){
+      //      std::cout << " recoFlag ES == " << esItr->recoFlag() << std::endl;
+	    // if(esItr->recoFlag() == 0){
+	//      std::cout << " recoFlag ES == ok " << std::endl;
 	h_recHits_ES_energy_gr -> Fill(esItr->energy());
-	h_recHits_ES_time_gr   -> Fill(esItr->time());
+	if(esItr->timeError()!=10000) h_recHits_ES_time_gr   -> Fill(esItr->time());
 	++nGoodRecHits;
 	
+	//std::cout << " >>> h_recHits_ES_energy_gr->GetEntries() = " << h_recHits_ES_energy_gr->GetEntries() << std::endl;
+
 	if( id.plane()==1 && id.zside() > 0 ) h_recHits_ES_occupancy_F_gr[0]->Fill(id.six(), id.siy());
 	if( id.plane()==1 && id.zside() < 0 ) h_recHits_ES_occupancy_F_gr[1]->Fill(id.six(), id.siy());
 	if( id.plane()==2 && id.zside() > 0 ) h_recHits_ES_occupancy_R_gr[0]->Fill(id.six(), id.siy());
 	if( id.plane()==2 && id.zside() < 0 ) h_recHits_ES_occupancy_R_gr[1]->Fill(id.six(), id.siy());
-
-
       }
+
       
+      //      std::cout << " >>> ciao2 " << std::endl;
       h_recHits_ES_energy -> Fill(esItr->energy()); 
-      h_recHits_ES_time   -> Fill(esItr->time()); 
+      if(esItr->timeError() != 10000) h_recHits_ES_time   -> Fill(esItr->time()); 
       if (esItr -> energy() > maxRecHitEnergyES ) maxRecHitEnergyES = esItr -> energy() ;
 
 
       // front plane : id.plane()==1
       if ( id.plane()==1 && id.zside() > 0 ){
 	h_recHits_ES_energy_F[0]-> Fill( esItr->energy() );
-	h_recHits_ES_time_F[0]  -> Fill( esItr->time() ); 
+	if(esItr->timeError() != 10000) h_recHits_ES_time_F[0]  -> Fill( esItr->time() ); 
 	h_recHits_ES_occupancy_F[0]->Fill(id.six(), id.siy());
 	nF[0]++;
       }
       if ( id.plane()==1 && id.zside() < 0 ){
 	h_recHits_ES_energy_F[1]-> Fill( esItr->energy() );
-	h_recHits_ES_time_F[1]  -> Fill( esItr->time() );
+	if(esItr->timeError() != 10000) h_recHits_ES_time_F[1]  -> Fill( esItr->time() );
 	nF[1]++;      
 	h_recHits_ES_occupancy_F[1]->Fill(id.six(), id.siy());
       }
       // rear plane : id.plane()==2
       if ( id.plane()==2 && id.zside() > 0 ){
 	h_recHits_ES_energy_R[0]-> Fill( esItr->energy() );
-	h_recHits_ES_time_R[0]  -> Fill( esItr->time() );
+	if(esItr->timeError() != 10000) h_recHits_ES_time_R[0]  -> Fill( esItr->time() );
 	nR[0]++;
 	h_recHits_ES_occupancy_R[0]->Fill(id.six(), id.siy());
       }
       if ( id.plane()==2 && id.zside() < 0 ){
 	h_recHits_ES_energy_R[1]->Fill( esItr->energy() );
-	h_recHits_ES_time_R[1]  -> Fill( esItr->time() );
+	if(esItr->timeError() != 10000) h_recHits_ES_time_R[1]  -> Fill( esItr->time() );
 	nR[1]++;
 	h_recHits_ES_occupancy_R[1]->Fill(id.six(), id.siy());
       }      
@@ -1931,6 +1954,49 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   h_recHits_ES_size_R[0] -> Fill( nR[0] );
   h_recHits_ES_size_R[1] -> Fill( nR[1] );
 
+  /*
+  // ... ES basic cluster
+  edm::Handle<reco::BasicClusterCollection> basicClusters_ES_h;
+  ev.getByLabel( basicClusterCollection_ES_, basicClusters_ES_h );
+  const reco::BasicClusterCollection* theESBasicClusters = basicClusters_ES_h.product () ;
+  if ( ! basicClusters_ES_h.isValid() ) {
+    std::cerr << "EcalValidation::analyze --> basicClusters_ES_h not found" << std::endl;
+  }
+
+  
+  int nBCcleaned_ES = 0;
+
+  for (reco::BasicClusterCollection::const_iterator itBC = theESBasicClusters->begin();
+       itBC != theESBasicClusters->end(); ++itBC ){
+    //Get the associated RecHits                        
+    // const std::vector<std::pair<DetId,float> > & hits= itBC->hitsAndFractions();
+    // for (std::vector<std::pair<DetId,float> > ::const_iterator rh = hits.begin(); rh!=hits.end(); ++rh){
+    // }
+
+    if
+    h_basicClusters_ES_nXtals -> Fill( (*itBC).hitsAndFractions().size() );
+    h_basicClusters_ES_energy -> Fill( itBC->energy() );
+    h_basicClusters_ES_eta    -> Fill( itBC->eta() );
+    h_basicClusters_ES_phi    -> Fill( itBC->phi() );
+
+
+
+    float E1 = EcalClusterTools::eMax   ( *itBC, theBarrelEcalRecHits);
+    //     float E9 = EcalClusterTools::e3x3   ( *itBC, theBarrelEcalRecHits, topology );                                                                                                                                                                                                                            
+    float E4 = EcalClusterTools::eTop   ( *itBC, theBarrelEcalRecHits, topology )+
+      EcalClusterTools::eRight ( *itBC, theBarrelEcalRecHits, topology )+
+      EcalClusterTools::eBottom( *itBC, theBarrelEcalRecHits, topology )+
+      EcalClusterTools::eLeft  ( *itBC, theBarrelEcalRecHits, topology );
+
+    if ( (1.-E4/E1) > 0.95 && E1 > 3.) continue;
+
+    h_basicClusters_EB_nXtals_cleaned -> Fill( (*itBC).hitsAndFractions().size() );
+    h_basicClusters_EB_energy_cleaned -> Fill( itBC->energy() );
+    nBCcleaned++;
+  }
+  h_basicClusters_EB_size         -> Fill( basicClusters_EB_h->size() );
+  h_basicClusters_EB_size_cleaned -> Fill( nBCcleaned );
+  */
 
   // ES clusters in X plane
   Handle<PreshowerClusterCollection> esClustersX;
@@ -1941,6 +2007,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   Handle<PreshowerClusterCollection> esClustersY;
   ev.getByLabel( esClusterCollectionY_, esClustersY);
   const PreshowerClusterCollection *ESclustersY = esClustersY.product(); 
+
 
   // Do the ES-BasicCluster matching 
   for (unsigned int icl = 0; icl < basicClusters_EE_h->size(); ++icl) {

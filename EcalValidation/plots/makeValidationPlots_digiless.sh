@@ -155,10 +155,10 @@ cat > ${plots_dir}/index.html <<EOF
  <li> Rec Hits
  <ul>
  <li><A href="#RecHitsMultiplicity"> Rec Hits Multiplicity </A><BR>
- <li><A href="#RechitSRP"> Rechit SRP </A><BR>
  <li><A href="#ESgoodRecHits"> ES good recHits </A><BR>
  <li><A href="#RecHitsEnergy"> Rec Hits Energy</A><BR>
  <li><A href="#RecHitsEnergyMax"> Rec Hits Max Energy </A><BR>
+ <li><A href="#RecHitsSpikeCleaned"> Rec Hits spike-cleaned </A><BR>
  <li><A href="#RecHitsEtaPhi"> Rec Hits Eta/Phi </A><BR>
  <li><A href="#RecHitsTime"> Rec Hits Time </A><BR>
  <li><A href="#RecHitsChi2"> Rec Hits Chi<sup>2</sup></A><BR>
@@ -174,6 +174,7 @@ cat > ${plots_dir}/index.html <<EOF
  <li><A href="#RecHitsOccupancyEE_1"> RecHits Occupancy (EE) (${file1}) </A><BR>
  <li><A href="#RecHitsOccupancyES_0"> RecHits Occupancy (ES) (${file2}) </A><BR>
  <li><A href="#RecHitsOccupancyES_1"> RecHits Occupancy (ES) (${file1}) </A><BR>
+ <li><A href="#RecHitsOccupancyRatio"> RecHits Occupancy DA over MC ratio </A><BR>
  <li><A href="#RecHitsSumEt"> RecHits SumEt </A><BR>
  
  
@@ -186,6 +187,7 @@ cat > ${plots_dir}/index.html <<EOF
  <li><A href="#SuperClustersEtaPhi"> Super Clusters Eta/Phi </A><BR>
  <li><A href="#NumberOfCrystalsInSC"> Number of Crystals per SuperCluster </A><BR>
  <li><A href="#NumberOfBCInSC"> Number of Basic Clusters per SuperCluster </A><BR>
+ <li><A href="#ClustersSpikeCleaned"> Clusters spike-cleaned </A><BR>
  <li><A href="#1-E4/E1"> Supercluster Seed 1-E4/E1 </A><BR>
  <li><A href="#ESclusters"> ES clusters  </A><BR>
 </ul>
@@ -220,15 +222,6 @@ cat > ${plots_dir}/index.html <<EOF
 
 <hr>
 
-<h3><A name="RechitSRP"> Rechit SRP </h3>
-
-<A HREF=${httpdir}/${out_dir}/h_recHits_EB_SRP.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EB_SRP.png"> </A>
-
-<A HREF=${httpdir}/${out_dir}/h_recHits_EE_SRP.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EE_SRP.png"> </A>
-</A>
-
-<hr>
-
 <h3><A name="ESgoodRecHits"> ES good recHits </h3>
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_ES_size_gr.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_ES_size_gr.png"> </A>
@@ -259,8 +252,6 @@ cat > ${plots_dir}/index.html <<EOF
 
 <hr>
 
-
-
 <h3><A name="RecHitsEnergyMax"> Rec Hits Max Energy </h3>
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_EB_energyMax.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EB_energyMax.png"> </A>
@@ -273,6 +264,17 @@ cat > ${plots_dir}/index.html <<EOF
 
 <hr>
 
+<h3><A name="RecHitsSpikeCleaned"> Rec Hits spike-cleaned </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_size_cleaned.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EB_size_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_energy_cleaned.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EB_energy_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_energyMax_cleaned.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EB_energyMax_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_time_cleaned.png> <img height="350" src="${httpdir}/${out_dir}/h_recHits_EB_time_cleaned.png"> </A>
+
+<hr>
 
 <h3><A name="RecHitsEtaPhi"> Rec Hits Eta/Phi </h3>
 
@@ -451,6 +453,26 @@ cat > ${plots_dir}/index.html <<EOF
 
 <hr>
 
+
+<h3><A name="RecHitsOccupancyRatio"> RecHits Occupancy DA over MC ratio </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EB_occupancy_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EB_occupancy_DAoMC_ratio.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EEM_occupancy_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EEM_occupancy_DAoMC_ratio.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_EEP_occupancy_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EEP_occupancy_DAoMC_ratio.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_gr_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F+_gr_DAoMC_ratio.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_gr_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_F-_gr_DAoMC_ratio.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_gr_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R+_gr_DAoMC_ratio.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_gr_DAoMC_ratio.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_ES_occupancy_R-_gr_DAoMC_ratio.png"> </A>
+
+<hr>
+
+
 <h3><A name="RecHitsSumEt"> RecHits SumEt </h3>
 
 <A HREF=${httpdir}/${out_dir}/h_recHits_EB_sumEt.png> <img height="300" src="${httpdir}/${out_dir}/h_recHits_EB_sumEt.png"> </A>
@@ -524,7 +546,6 @@ cat > ${plots_dir}/index.html <<EOF
 <hr>
 
 
-
 <h3><A name="NumberOfBCInSC">  Number of Basic Clusters per SuperCluster </h3>
 
 <A HREF=${httpdir}/${out_dir}/h_superClusters_EB_nBC.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EB_nBC.png"> </A>
@@ -532,6 +553,21 @@ cat > ${plots_dir}/index.html <<EOF
 <A HREF=${httpdir}/${out_dir}/h_superClusters_EEP_nBC.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EEP_nBC.png"> </A>
 
 <A HREF=${httpdir}/${out_dir}/h_superClusters_EEM_nBC.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EEM_nBC.png"> </A>
+
+<hr>
+
+
+<h3><A name="ClustersSpikeCleaned"> Clusters spike-cleaned </h3>
+
+<A HREF=${httpdir}/${out_dir}/h_basicClusters_EB_size_cleaned.png> <img height="300" src="${httpdir}/${out_dir}/h_basicClusters_EB_size_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_superClusters_EB_size_cleaned.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EB_size_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_superClusters_EB_nXtals_cleaned.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EB_nXtals_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_superClusters_EB_nBC_cleaned.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EB_nBC_cleaned.png"> </A>
+
+<A HREF=${httpdir}/${out_dir}/h_superClusters_EB_energy_cleaned.png> <img height="300" src="${httpdir}/${out_dir}/h_superClusters_EB_energy_cleaned.png"> </A>
 
 <hr>
 
