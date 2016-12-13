@@ -17,7 +17,22 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/EgammaReco/interface/SuperCluster.h"
+#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
+#include "DataFormats/EgammaReco/interface/BasicCluster.h"
+#include "DataFormats/EgammaReco/interface/BasicClusterFwd.h"
+#include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
+#include "DataFormats/EgammaReco/interface/PreshowerClusterFwd.h"
 
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+
+#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/CaloJetCollection.h"
+
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 // ROOT include
 #include "TFile.h"
@@ -66,31 +81,31 @@ class EcalValidation : public edm::EDAnalyzer {
   
 
 	 // ----------member data ---------------------------
-	 edm::InputTag recHitCollection_EB_;
-	 edm::InputTag recHitCollection_EE_;
-         edm::InputTag redRecHitCollection_EB_;
-         edm::InputTag redRecHitCollection_EE_;
-         edm::InputTag basicClusterCollection_EB_;
-	 edm::InputTag basicClusterCollection_EE_;
-	 edm::InputTag superClusterCollection_EB_;
-	 edm::InputTag superClusterCollection_EE_;
-	 edm::InputTag esRecHitCollection_;
-	 edm::InputTag esClusterCollectionX_ ;
-	 edm::InputTag esClusterCollectionY_ ;
-         edm::InputTag ebDigiCollection_ ;
-	 edm::InputTag eeDigiCollection_ ;
-         edm::InputTag ebEcalDigiCollection_ ;
-	 edm::InputTag eeEcalDigiCollection_ ;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EB_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EE_;
+     edm::EDGetTokenT<EcalRecHitCollection> redRecHitCollection_EB_;
+     edm::EDGetTokenT<EcalRecHitCollection> redRecHitCollection_EE_;
+     edm::EDGetTokenT<reco::BasicClusterCollection> basicClusterCollection_EB_;
+	 edm::EDGetTokenT<reco::BasicClusterCollection> basicClusterCollection_EE_;
+	 edm::EDGetTokenT<reco::SuperClusterCollection> superClusterCollection_EB_;
+	 edm::EDGetTokenT<reco::SuperClusterCollection> superClusterCollection_EE_;
+	 edm::EDGetTokenT<ESRecHitCollection> esRecHitCollection_;
+	 edm::EDGetTokenT<reco::PreshowerClusterCollection> esClusterCollectionX_ ;
+	 edm::EDGetTokenT<reco::PreshowerClusterCollection> esClusterCollectionY_ ;
+     edm::EDGetTokenT<EBDigiCollection> ebDigiCollection_ ;
+	 edm::EDGetTokenT<EEDigiCollection> eeDigiCollection_ ;
+     edm::EDGetTokenT<EBSrFlagCollection> ebSrFlagCollection_ ;
+	 edm::EDGetTokenT<EESrFlagCollection> eeSrFlagCollection_ ;
 
-	 edm::InputTag tracks_ ;
-	 edm::InputTag beamSpot_ ;
-         edm::InputTag jets_;
+	 edm::EDGetTokenT<edm::View<reco::Track> > tracks_ ;
+	 edm::EDGetTokenT<reco::BeamSpot> beamSpot_ ;
+     edm::EDGetTokenT<reco::CaloJetCollection> jets_;
 	 
-         bool SaveSrFlag_;
+     bool SaveSrFlag_;
          
 	 double ethrEB_;
 	 double ethrEE_;
-         double gainId_;
+     double gainId_;
 	 
 
 	 double scEtThrEB_;

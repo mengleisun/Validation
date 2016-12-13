@@ -82,22 +82,22 @@ using namespace reco;
 EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
 {
   //now do what ever initialization is needed
-  PVTag_                     = ps.getParameter<edm::InputTag>("PVTag");
-  recHitCollection_EB_       = ps.getParameter<edm::InputTag>("recHitCollection_EB");
-  recHitCollection_EE_       = ps.getParameter<edm::InputTag>("recHitCollection_EE");
-  redRecHitCollection_EB_    = ps.getParameter<edm::InputTag>("redRecHitCollection_EB");
-  redRecHitCollection_EE_    = ps.getParameter<edm::InputTag>("redRecHitCollection_EE");
-  basicClusterCollection_EB_ = ps.getParameter<edm::InputTag>("basicClusterCollection_EB");
-  basicClusterCollection_EE_ = ps.getParameter<edm::InputTag>("basicClusterCollection_EE");
-  superClusterCollection_EB_ = ps.getParameter<edm::InputTag>("superClusterCollection_EB");
-  superClusterCollection_EE_ = ps.getParameter<edm::InputTag>("superClusterCollection_EE");
-  esRecHitCollection_        = ps.getParameter<edm::InputTag>("recHitCollection_ES");
-  esClusterCollectionX_      = ps.getParameter<edm::InputTag>("ClusterCollectionX_ES");
-  esClusterCollectionY_      = ps.getParameter<edm::InputTag>("ClusterCollectionY_ES");
+  PV_                        = consumes<reco::VertexCollection>(ps.getParameter<edm::InputTag>("PVTag"));
+  recHitCollection_EB_       = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_EB"));
+  recHitCollection_EE_       = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_EE"));
+  redRecHitCollection_EB_    = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("redRecHitCollection_EB"));
+  redRecHitCollection_EE_    = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("redRecHitCollection_EE"));
+  basicClusterCollection_EB_ = consumes<reco::BasicClusterCollection>(ps.getParameter<edm::InputTag>("basicClusterCollection_EB"));
+  basicClusterCollection_EE_ = consumes<reco::BasicClusterCollection>(ps.getParameter<edm::InputTag>("basicClusterCollection_EE"));
+  superClusterCollection_EB_ = consumes<reco::SuperClusterCollection>(ps.getParameter<edm::InputTag>("superClusterCollection_EB"));
+  superClusterCollection_EE_ = consumes<reco::SuperClusterCollection>(ps.getParameter<edm::InputTag>("superClusterCollection_EE"));
+  esRecHitCollection_        = consumes<ESRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_ES"));
+  esClusterCollectionX_      = consumes<PreshowerClusterCollection>(ps.getParameter<edm::InputTag>("ClusterCollectionX_ES"));
+  esClusterCollectionY_      = consumes<PreshowerClusterCollection>(ps.getParameter<edm::InputTag>("ClusterCollectionY_ES"));
 
-  tracks_                    = ps.getParameter<edm::InputTag>("tracks");
-  beamSpot_                  = ps.getParameter<edm::InputTag>("beamSpot");
-  jets_                      = ps.getParameter<edm::InputTag>("jets");
+  tracks_                    = consumes<edm::View<reco::Track> >(ps.getParameter<edm::InputTag>("tracks"));
+  beamSpot_                  = consumes<reco::BeamSpot>(ps.getParameter<edm::InputTag>("beamSpot"));
+  jets_                      = consumes<reco::CaloJetCollection>(ps.getParameter<edm::InputTag>("jets"));
 
   ethrEB_                    = ps.getParameter<double>("ethrEB");
   ethrEE_                    = ps.getParameter<double>("ethrEE");
@@ -168,18 +168,7 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
 
   naiveId_ = 0;
 
-  /*
-  noisyChannelsFileEB_cut6.open("noisyChannelsEB_cut6.txt");
-  noisyChannelsFileEEP_cut6.open("noisyChannelsEEP_cut6.txt");
-  noisyChannelsFileEEM_cut6.open("noisyChannelsEEM_cut6.txt");
-  noisyChannelsFileEB_cut3.open("noisyChannelsEB_cut3.txt");
-  noisyChannelsFileEEP_cut3.open("noisyChannelsEEP_cut3.txt");
-  noisyChannelsFileEEM_cut3.open("noisyChannelsEEM_cut3.txt");
-  noisyChannelsFileSC.open("noisyChannelsSC.txt");
-   
-  f_noisyChannelsSC = fopen("noisyChannelsSC.txt","r");
-  */
-
+  
   // histos 
   
   edm::Service<TFileService> fs;
@@ -193,7 +182,6 @@ EcalValidationDigiless::EcalValidationDigiless(const edm::ParameterSet& ps)
   h_numberOfEvents = fs->make<TH1D>("h_numberOfEvents","h_numberOfEvents",10,0,10);
    
   h_PV_n = fs->make<TH1D>("h_PV_n","h_PV_n",50,0.,50.);
-  h_PV_cut_n = fs->make<TH1D>("h_PV_cut_n","h_PV_cut_n",50,0.,50.);
   
   // ReducedRecHits ----------------------------------------------
   // ... barrel 
@@ -643,19 +631,16 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
  
   // Vertex Collection
   edm::Handle<reco::VertexCollection> vertexes;
-  ev.getByLabel(PVTag_, vertexes); 
+  ev.getByToken(PV_,vertexes);
   if(vertexes->size() != 1) h_PV_n->Fill(vertexes->size());
-
-  if(vertexes->size() != 10.) return;
-  h_PV_cut_n->Fill(vertexes->size());
   
   //Get the BS position
   edm::Handle<reco::BeamSpot> recoBeamSpotHandle;
-  ev.getByLabel(beamSpot_,recoBeamSpotHandle);
+  ev.getByToken(beamSpot_,recoBeamSpotHandle);
   const reco::BeamSpot::Point& BSPosition = recoBeamSpotHandle->position(); 
   //Get tracks
   edm::Handle<edm::View<reco::Track> > TracksHandle ;
-  ev.getByLabel (tracks_, TracksHandle) ;
+  ev.getByToken (tracks_, TracksHandle) ;
   //Get the magnetic field
   edm::ESHandle<MagneticField> theMagField;
   iSetup.get<IdealMagneticFieldRecord>().get(theMagField);
@@ -668,10 +653,6 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   iSetup.get<EcalLaserDbRecord>().get(theLaser);
   
   naiveId_++;
-
-
-  //  int runN = ev.id().run();
-  //  std::cout << "runN = " << runN << std::endl;
 
   // calo geometry
   edm::ESHandle<CaloGeometry> pGeometry;
@@ -688,7 +669,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 
   // --- REDUCED REC HITS ------------------------------------------------------------------------------------- 
   edm::Handle<EcalRecHitCollection> redRecHitsEB;
-  ev.getByLabel( redRecHitCollection_EB_, redRecHitsEB );
+  ev.getByToken( redRecHitCollection_EB_, redRecHitsEB );
   const EcalRecHitCollection* theBarrelEcalredRecHits = redRecHitsEB.product () ;
   if ( ! redRecHitsEB.isValid() ) {
     std::cerr << "EcalValidation::analyze --> redRecHitsEB not found" << std::endl; 
@@ -705,7 +686,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   
   // ... endcap
   edm::Handle<EcalRecHitCollection> redRecHitsEE;
-  ev.getByLabel( redRecHitCollection_EE_, redRecHitsEE );
+  ev.getByToken( redRecHitCollection_EE_, redRecHitsEE );
   const EcalRecHitCollection* theEndcapEcalredRecHits = redRecHitsEE.product () ;
   if ( ! redRecHitsEE.isValid() ) {
     std::cerr << "EcalValidation::analyze --> redRecHitsEE not found" << std::endl; 
@@ -725,7 +706,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   
   // ... barrel
   edm::Handle<EcalRecHitCollection> recHitsEB;
-  ev.getByLabel( recHitCollection_EB_, recHitsEB );
+  ev.getByToken( recHitCollection_EB_, recHitsEB );
   const EcalRecHitCollection* theBarrelEcalRecHits = recHitsEB.product () ;
   if ( ! recHitsEB.isValid() ) {
     std::cerr << "EcalValidation::analyze --> recHitsEB not found" << std::endl; 
@@ -795,7 +776,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       if(h_DB_noiseMap_EB->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0) h_DB_noiseMap_EB->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut6->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 6.){
          h_DB_noiseMap_EB_cut6->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-	 //         noisyChannelsFileEB_cut6 << ebid.iphi() << " " << ebid.ieta() << std::endl;
+         
       }
       if(h_DB_noiseMap_EB_cut5_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 5.5) h_DB_noiseMap_EB_cut5_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 5.) h_DB_noiseMap_EB_cut5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
@@ -804,7 +785,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       if(h_DB_noiseMap_EB_cut3_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 3.5) h_DB_noiseMap_EB_cut3_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
       if(h_DB_noiseMap_EB_cut3->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 3.){
          h_DB_noiseMap_EB_cut3->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-	 //         noisyChannelsFileEB_cut3 << ebid.iphi() << " " << ebid.ieta() << std::endl;
+         
       }
 
       float seedLaserCorrection = theLaser->getLaserCorrection(ebid, ev.time());
@@ -875,7 +856,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       if ( itr -> energy() > ethrEB_ ){
 	h_recHits_EB_time          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2          -> Fill( itr -> chi2() );
-	//	h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	//h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	h_recHits_EB_occupancy     -> Fill( ebid.iphi() , ebid.ieta() );
 	h_recHits_EB_deviation     -> Fill( ebid.iphi() , ebid.ieta() );
 	h_recHits_EB_iPhiOccupancy -> Fill( ebid.iphi() );
@@ -899,7 +880,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
       if ( itr -> energy() > ethrEB_ ){
 	h_recHits_EB_time_cleaned          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2_cleaned          -> Fill( itr -> chi2() );
-	//	h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
+	//h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
       }
 
       // max E rec hit - cleaned
@@ -918,7 +899,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   
   // ... endcap
   edm::Handle<EcalRecHitCollection> recHitsEE;
-  ev.getByLabel( recHitCollection_EE_, recHitsEE );
+  ev.getByToken( recHitCollection_EE_, recHitsEE );
   const EcalRecHitCollection* theEndcapEcalRecHits = recHitsEE.product () ;
   if ( ! recHitsEE.isValid() ) {
     std::cerr << "EcalValidation::analyze --> recHitsEE not found" << std::endl; 
@@ -1003,7 +984,6 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEP->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEP->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
       	   if(h_DB_noiseMap_EEP_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.){
               h_DB_noiseMap_EEP_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-	      //              noisyChannelsFileEEP_cut6 << eeid.ix() << " " << eeid.iy() << std::endl;
            }
            if(h_DB_noiseMap_EEP_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEP_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEP_cut5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.) h_DB_noiseMap_EEP_cut5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
@@ -1012,7 +992,6 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEP_cut3_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.5) h_DB_noiseMap_EEP_cut3_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEP_cut3->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.){
               h_DB_noiseMap_EEP_cut3->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-	      //              noisyChannelsFileEEP_cut3 << eeid.ix() << " " << eeid.iy() << std::endl;
            }
       }
       
@@ -1020,7 +999,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEM->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEM->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
       	   if(h_DB_noiseMap_EEM_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.){
               h_DB_noiseMap_EEM_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-	      //              noisyChannelsFileEEM_cut6 << eeid.ix() << " " << eeid.iy() << std::endl;
+              
            }
            if(h_DB_noiseMap_EEM_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEM_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEM_cut5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.) h_DB_noiseMap_EEM_cut5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
@@ -1029,7 +1008,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
            if(h_DB_noiseMap_EEM_cut3_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.5) h_DB_noiseMap_EEM_cut3_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEM_cut3->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.){
               h_DB_noiseMap_EEM_cut3->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-	      //              noisyChannelsFileEEM_cut3 << eeid.ix() << " " << eeid.iy() << std::endl;
+              
            }
       }
 
@@ -1120,7 +1099,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	if (  itr -> energy() > ethrEE_ ){
 	  h_recHits_EEP_time          -> Fill( itr -> time() );
 	  h_recHits_EEP_Chi2          -> Fill( itr -> chi2() );
-	  //	  h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	  //h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEP_occupancy     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEP_deviation     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEP_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
@@ -1199,7 +1178,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 	if (  itr -> energy() > ethrEE_ ) {
 	  h_recHits_EEM_time          -> Fill( itr -> time() );
 	  h_recHits_EEM_Chi2          -> Fill( itr -> chi2() );
-	  //	  h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	  //h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEM_occupancy     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_deviation     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
@@ -1384,7 +1363,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 
   // ... barrel
   edm::Handle<reco::BasicClusterCollection> basicClusters_EB_h;
-  ev.getByLabel( basicClusterCollection_EB_, basicClusters_EB_h );
+  ev.getByToken( basicClusterCollection_EB_, basicClusters_EB_h );
   const reco::BasicClusterCollection* theBarrelBasicClusters = basicClusters_EB_h.product () ;
   if ( ! basicClusters_EB_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> basicClusters_EB_h not found" << std::endl; 
@@ -1472,7 +1451,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   
   // ... endcap
   edm::Handle<reco::BasicClusterCollection> basicClusters_EE_h;
-  ev.getByLabel( basicClusterCollection_EE_, basicClusters_EE_h );
+  ev.getByToken( basicClusterCollection_EE_, basicClusters_EE_h );
   if ( ! basicClusters_EE_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> basicClusters_EE_h not found" << std::endl; 
   }
@@ -1590,7 +1569,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   // Super Clusters
   // ... barrel
   edm::Handle<reco::SuperClusterCollection> superClusters_EB_h;
-  ev.getByLabel( superClusterCollection_EB_, superClusters_EB_h );
+  ev.getByToken( superClusterCollection_EB_, superClusters_EB_h );
   const reco::SuperClusterCollection* theBarrelSuperClusters = superClusters_EB_h.product () ;
   if ( ! superClusters_EB_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> superClusters_EB_h not found" << std::endl; 
@@ -1711,7 +1690,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
   
   // ... endcap
   edm::Handle<reco::SuperClusterCollection> superClusters_EE_h;
-  ev.getByLabel( superClusterCollection_EE_, superClusters_EE_h );
+  ev.getByToken( superClusterCollection_EE_, superClusters_EE_h );
   const reco::SuperClusterCollection* theEndcapSuperClusters = superClusters_EE_h.product () ;
   if ( ! superClusters_EE_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> superClusters_EE_h not found" << std::endl; 
@@ -1841,7 +1820,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
  
   //Preshower RecHits
   edm::Handle<ESRecHitCollection> recHitsES;
-  ev.getByLabel (esRecHitCollection_, recHitsES) ;
+  ev.getByToken (esRecHitCollection_, recHitsES) ;
   const ESRecHitCollection* thePreShowerRecHits = recHitsES.product () ;
 
   if ( ! recHitsES.isValid() ) {
@@ -1896,12 +1875,12 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 
   // ES clusters in X plane
   Handle<PreshowerClusterCollection> esClustersX;
-  ev.getByLabel( esClusterCollectionX_, esClustersX);
+  ev.getByToken( esClusterCollectionX_, esClustersX);
   const PreshowerClusterCollection *ESclustersX = esClustersX.product();
 
   // ES clusters in Y plane
   Handle<PreshowerClusterCollection> esClustersY;
-  ev.getByLabel( esClusterCollectionY_, esClustersY);
+  ev.getByToken( esClusterCollectionY_, esClustersY);
   const PreshowerClusterCollection *ESclustersY = esClustersY.product(); 
 
   // Do the ES-BasicCluster matching 
@@ -1995,7 +1974,7 @@ void EcalValidationDigiless::analyze(const edm::Event& ev, const edm::EventSetup
 
   /// Get Jets and draw EMF maps
   edm::Handle<reco::CaloJetCollection> JetHandle ;
-  ev.getByLabel (jets_,JetHandle);
+  ev.getByToken (jets_,JetHandle);
 
   for(unsigned int i=0; i<JetHandle->size(); ++i) 
   { 
@@ -2041,15 +2020,8 @@ EcalValidationDigiless::beginJob()
 // ------------ method called once each job just after ending the event loop  ------------
 void 
 EcalValidationDigiless::endJob() {
-  /*  
-  noisyChannelsFileEB_cut6.close();
-  noisyChannelsFileEEP_cut6.close();
-  noisyChannelsFileEEM_cut6.close();
-  noisyChannelsFileEB_cut3.close();
-  noisyChannelsFileEEP_cut3.close();
-  noisyChannelsFileEEM_cut3.close();
-  noisyChannelsFileSC.close();
-  */
+  
+
   h_numberOfEvents ->Fill(0.,naiveId_);
   
   /// ---------- Compute and Fill RecHits occupancy deviations

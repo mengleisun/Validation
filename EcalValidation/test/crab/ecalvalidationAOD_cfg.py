@@ -22,13 +22,13 @@ process.load("Configuration.StandardSequences.MagneticField_cff")
 process.load('Configuration.StandardSequences.FrontierConditions_GlobalTag_cff')  
                                                      
 from Configuration.AlCa.GlobalTag_condDBv2 import GlobalTag     
-process.GlobalTag.globaltag = "76X_dataRun2_HLT_frozen_v3"
+process.GlobalTag.globaltag = "76X_mcRun2_asymptotic_v12"
                                                                    
 
 process.source = cms.Source("PoolSource",
     skipEvents = cms.untracked.uint32(0),                       
     fileNames = cms.untracked.vstring(
-    '/store/relval/CMSSW_7_6_0_pre6/ZeroBias/RECO/76X_dataRun2_HLT_frozen_v3_RelVal_zb2015B-v1/00000/04125641-9869-E511-86B7-003048FFD728.root'
+    '/store/mc/RunIIFall15DR76Premix/TTJets_TuneCUETP8M1_13TeV-amcatnloFXFX-pythia8/AODSIM/premixPU50_nondeterministic_76X_mcRun2_asymptotic_v12-v1/20000/002E027D-7FF0-E511-95E4-0CC47A4C8EBA.root'
     )
 )
 
@@ -71,7 +71,7 @@ process.noscraping = cms.EDFilter("FilterOutScraping",
    thresh = cms.untracked.double(0.25)
 )
 
-process.load("Validation.EcalValidation.ecalvalidationDigiless_cfi")
+process.load("Validation.EcalValidation.ecalvalidationAOD_cfi")
 
 process.TFileService = cms.Service("TFileService",
     fileName = cms.string('validation.root')

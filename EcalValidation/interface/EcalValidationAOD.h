@@ -1,22 +1,71 @@
-#ifndef EcalValidation_Samples_h
-#define EcalValidation_Samples_h
+#ifndef EcalValidationAOD_h
+#define EcalValidationAOD_h
 
 // system include files
 #include <memory>
 
 // user include files
+// user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Common/interface/EventBase.h"
+#include "DataFormats/Provenance/interface/EventAuxiliary.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
+#include "Geometry/CaloTopology/interface/CaloTopology.h"
+#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
+#include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
+#include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
+#include "Geometry/CaloTopology/interface/CaloSubdetectorTopology.h"
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
+#include "Geometry/EcalAlgo/interface/EcalBarrelGeometry.h"
+#include "Geometry/EcalAlgo/interface/EcalEndcapGeometry.h"
+
+#include "DataFormats/EcalDetId/interface/EBDetId.h"
+#include "DataFormats/EcalDetId/interface/EEDetId.h"
+#include "DataFormats/EcalDetId/interface/ESDetId.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
+#include "DataFormats/EgammaReco/interface/SuperCluster.h"
+#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
+#include "DataFormats/EgammaReco/interface/BasicCluster.h"
+#include "DataFormats/EgammaReco/interface/BasicClusterFwd.h"
+#include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
+#include "DataFormats/EgammaReco/interface/PreshowerClusterFwd.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalTools.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgo.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalCleaningAlgo.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalRecHitLess.h"
+#include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbService.h"
+#include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbRecord.h"
+
+
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+
+#include "RecoEgamma/EgammaTools/interface/ECALPositionCalculator.h"
+
+#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/CaloJetCollection.h"
+#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
+#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
+
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+#include "MagneticField/Engine/interface/MagneticField.h"
+
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
+
+#include "DataFormats/VertexReco/interface/Vertex.h"
+#include "RecoVertex/PrimaryVertexProducer/interface/PrimaryVertexSorter.h"
+#include "RecoVertex/PrimaryVertexProducer/interface/VertexHigherPtSquared.h"
 
 
 // ROOT include
@@ -25,6 +74,15 @@
 #include "TH2.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
+#include <iostream>
+#include <cmath>
+#include <fstream>
+#include <map>
+
+using namespace cms ;
+using namespace edm ;
+using namespace std ;
+using namespace reco;
 
 
 // Less than operator for sorting EcalRecHits according to energy.
@@ -38,11 +96,11 @@ public:
 };
 
 
-class EcalValidation_Samples : public edm::EDAnalyzer {
+class EcalValidationAOD : public edm::EDAnalyzer {
   
       public:
-         explicit EcalValidation_Samples(const edm::ParameterSet&);
-	 ~EcalValidation_Samples();
+         explicit EcalValidationAOD(const edm::ParameterSet&);
+	 ~EcalValidationAOD();
   
   
       private:
@@ -66,40 +124,27 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
   
 
 	 // ----------member data ---------------------------
-	 edm::InputTag recHitCollection_EB_;
-	 edm::InputTag recHitCollection_EE_;
-	 edm::InputTag recHitCollection_ES_;
-         edm::InputTag redRecHitCollection_EB_;
-         edm::InputTag redRecHitCollection_EE_;
-         edm::InputTag redRecHitCollection_ES_;
-         edm::InputTag basicClusterCollection_EB_;
-	 edm::InputTag basicClusterCollection_EE_;
-	 edm::InputTag superClusterCollection_EB_;
-	 edm::InputTag superClusterCollection_EE_;
-	 edm::InputTag esRecHitCollection_;
-	 edm::InputTag esClusterCollectionX_ ;
-	 edm::InputTag esClusterCollectionY_ ;
-         edm::InputTag ebDigiCollection_ ;
-	 edm::InputTag eeDigiCollection_ ;
-	 edm::InputTag esDigiCollection_ ;
-         edm::InputTag ebEcalDigiCollection_ ;
-	 edm::InputTag eeEcalDigiCollection_ ;
-	 //	 edm::InputTag esEcalDigiCollection_ ;
+         edm::EDGetTokenT<reco::VertexCollection> PV_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EB_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EE_;
+         edm::EDGetTokenT<reco::BasicClusterCollection> basicClusterCollection_EB_;
+	 edm::EDGetTokenT<reco::BasicClusterCollection> basicClusterCollection_EE_;
+	 edm::EDGetTokenT<reco::SuperClusterCollection> superClusterCollection_EB_;
+	 edm::EDGetTokenT<reco::SuperClusterCollection> superClusterCollection_EE_;
+	 edm::EDGetTokenT<ESRecHitCollection> esRecHitCollection_;
+	 edm::EDGetTokenT<PreshowerClusterCollection> esClusterCollectionX_ ;
+	 edm::EDGetTokenT<PreshowerClusterCollection> esClusterCollectionY_ ;
 
-	 edm::InputTag tracks_ ;
-	 edm::InputTag beamSpot_ ;
-         edm::InputTag jets_;
+	 edm::EDGetTokenT<edm::View<reco::Track> > tracks_ ;
+	 edm::EDGetTokenT<reco::BeamSpot> beamSpot_ ;
+         edm::EDGetTokenT<reco::CaloJetCollection> jets_;
 	 
-         bool SaveSrFlag_;
-         
 	 double ethrEB_;
 	 double ethrEE_;
          double gainId_;
-	 
 
 	 double scEtThrEB_;
 	 double scEtThrEE_;
-
 
 	 // for Pi0
 	 PositionCalc posCalculator_ ;
@@ -164,97 +209,17 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
 	 int naiveId_;
 	 
 	 TH1D *h_numberOfEvents;
-         
-	 // ReducedRecHits ----------------------------------------------
-	 // ... barrel 
-         TH1D *h_redRecHits_EB_recoFlag;
-	 // ... endcap 
-         TH1D *h_redRecHits_EE_recoFlag;
-	 // ... all 
-         TH1D *h_redRecHits_recoFlag;
+         TH1D* h_PV_n;
 	 
 	 // RecHits ----------------------------------------------
          
          // ... Utils
-         
-        std::map<int,float> sumRecHitEtEB;
-        std::map<int,float> sumRecHitEtEEP;
-        std::map<int,float> sumRecHitEtCutEEP;
-        std::map<int,float> sumRecHitEtEEM;
-        std::map<int,float> sumRecHitEtCutEEM;
+         std::map<int,float> sumRecHitEtEB;
+         std::map<int,float> sumRecHitEtEEP;
+         std::map<int,float> sumRecHitEtCutEEP;
+         std::map<int,float> sumRecHitEtEEM;
+         std::map<int,float> sumRecHitEtCutEEM;
         
-        std::map <int,TH1D*> HF_noise_Eta_map;
-  	std::map <int,TH1D*> LF_noise_Eta_map;
-  	std::map <int,TH1D*> Total_noise_Eta_map;
-        std::map <int,TH1D*> HF_noise_Eta_map_ped;
-  	std::map <int,TH1D*> LF_noise_Eta_map_ped;
-  	std::map <int,TH1D*> Total_noise_Eta_map_ped;
-  	std::map <int,TH1D*> HF_noise_FromRechit_Eta_map;
-  	std::map <int,TH1D*> LF_noise_FromRechit_Eta_map;
-  	std::map <int,TH1D*> Total_noise_FromRechit_Eta_map;
-        std::map <int,TH1D*> HF_noise_FromRechit_Eta_map_ped;
-  	std::map <int,TH1D*> LF_noise_FromRechit_Eta_map_ped;
-  	std::map <int,TH1D*> Total_noise_FromRechit_Eta_map_ped;
-        std::map <int,TH1D*> Amplitude_FromRechit_Eta;
-        std::map <int,TH1D*> Amplitude_Eta;
-
-  	std::map <int,std::map<int, TH1D*> > HF_noise_iphieta;
-  	std::map <int,std::map<int, TH1D*> > LF_noise_iphieta;
- 	std::map <int,std::map<int, TH1D*> > Total_noise_iphieta;
-        std::map <int,std::map<int, TH1D*> > Amplitude_FromRechit_iphieta;
-        std::map <int,std::map<int, TH1D*> > Amplitude_iphieta;
-        std::map <int,TH1D*> HF_noise_ieta;
-  	std::map <int,TH1D* > LF_noise_ieta;
- 	std::map <int,TH1D* > Total_noise_ieta;
-  	std::map <int,std::map<int, TH1D*> > HF_noise_ixiy_EEP;
-  	std::map <int,std::map<int, TH1D*> > LF_noise_ixiy_EEP;
-  	std::map <int,std::map<int, TH1D*> > Total_noise_ixiy_EEP;
-  	std::map <int,std::map<int, TH1D*> > HF_noise_ixiy_EEM;
-  	std::map <int,std::map<int, TH1D*> > LF_noise_ixiy_EEM;
-  	std::map <int,std::map<int, TH1D*> > Total_noise_ixiy_EEM;
-        std::map <int,std::map<int, TH1D*> > Amplitude_FromRechit_ixiy_EEP;
-        std::map <int,std::map<int, TH1D*> > Amplitude_ixiy_EEP;
-        std::map <int,std::map<int, TH1D*> > Amplitude_FromRechit_ixiy_EEM;
-        std::map <int,std::map<int, TH1D*> > Amplitude_ixiy_EEM;
-         
-	//PulseShape
-	TProfile* h_PulseShape_EB;
-	TProfile* h_PulseShape_EE;
-	TProfile* h_PulseShape_ES;
-	TProfile* h_PulseShape_ESpedSub;
-	TProfile* h_PulseShape_ES_inTime;
-	TProfile* h_PulseShape_ES_eOOT;
-	TProfile* h_PulseShape_ES_lOOT;
-	TProfile* h_PulseShape_ES_kGood;
-	TProfile* h_PulseShape_ES_kGoodpedSub;
-
-	TProfile* h_PulseShape_ES_inTime_kGood;
-	TProfile* h_PulseShape_ES_eOOT_kGood;
-	TProfile* h_PulseShape_ES_lOOT_kGood;
-
-	TH1D* h_PulseShape_ES_pedSub[100];
-
-
-         // ... noise vs eta
-         TH1D* h_HF_noise_FromRechit_vs_Eta;
-         TH1D* h_LF_noise_FromRechit_vs_Eta;
-         TH1D* h_Total_noise_FromRechit_vs_Eta;
-         TH1D* h_HF_noise_FromRechit_vs_Eta_ped;
-         TH1D* h_LF_noise_FromRechit_vs_Eta_ped;
-         TH1D* h_Total_noise_FromRechit_vs_Eta_ped;
-         TH1D* h_HF_noise_vs_Eta;
-         TH1D* h_LF_noise_vs_Eta;
-         TH1D* h_Total_noise_vs_Eta;
-         TH1D* h_HF_noise_vs_Eta_ped;
-         TH1D* h_LF_noise_vs_Eta_ped;
-         TH1D* h_Total_noise_vs_Eta_ped;
-         TH1D* h_HF_noise_vs_iEta;
-         TH1D* h_LF_noise_vs_iEta;
-         TH1D* h_Total_noise_vs_iEta;
-         TH1D* h_Amplitude_vs_Eta;
-         TH1D* h_Amplitude_FromRechit_vs_Eta;
-         
-
          // ... DataBase noise map
          TH2D* h_DB_noiseMap_EB;
          TH2D* h_DB_noiseMap_EEP;
@@ -286,26 +251,6 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
          TH2D* h_DB_LaserCorrMap_EEP;
          TH2D* h_DB_LaserCorrMap_EEM;
          
-         // ... noise map
-         TH2D* h_HF_noise_iphieta_EB;
-         TH2D* h_LF_noise_iphieta_EB;
-         TH2D* h_Total_noise_iphieta_EB;
-         TH2D* h_Amplitude_iphieta_EB;
-         TH2D* h_Amplitude_FromRechit_iphieta_EB;
-         TH2D* h_HF_noise_ixiy_EEP;
-         TH2D* h_LF_noise_ixiy_EEP;
-         TH2D* h_Total_noise_ixiy_EEP;
-         TH2D* h_HF_noise_ixiy_EEM;
-         TH2D* h_LF_noise_ixiy_EEM;
-         TH2D* h_Total_noise_ixiy_EEM;
-         TH2D* h_Amplitude_FromRechit_ixiy_EEP;
-         TH2D* h_Amplitude_FromRechit_ixiy_EEM;
-         TH2D* h_Amplitude_ixiy_EEP;
-         TH2D* h_Amplitude_ixiy_EEM;
-         
-         TH1D* h_recHits_EB_SRP;
-         TH1D* h_recHits_EE_SRP;
-          
 	 // ... barrel 
 	 TH1D *h_recHits_EB_size; 
 	 TH1D *h_recHits_EB_energy;
@@ -322,27 +267,6 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
 	 TH2D *h_recHits_EB_deviation;
          
 	 TH1D *h_recHits_EB_energy_spike;
-
-	 //// digis ped
-	 TH1D* h_sample_EB;
-	 TH1D* h_samplePed_EB;
-	 TH1D* h_sample_EE;
-	 TH1D* h_samplePed_EE;
-
-         // ... barrel digis
-	 TH1D* h_digis_EB_ped_mean;
-         TH1D* h_digis_EB_ped_rms;
-         TH1D* h_digisFromRechit_EB_ped_mean;
-         TH1D* h_digisFromRechit_EB_ped_rms;
-         TH2D *h_digis_EB_occupancy;
-
-         // ... barrel noise
-	 TH1D* h_HF_noise_EB;
-         TH1D* h_LF_noise_EB;
-         TH1D* h_Total_noise_EB;
-         TH1D* h_HF_noise_FromRechit_EB;
-         TH1D* h_LF_noise_FromRechit_EB;
-         TH1D* h_Total_noise_FromRechit_EB;
 
 	 //... barrel ( with spike cleaning )
 	 TH1D *h_recHits_EB_size_cleaned; 
@@ -384,32 +308,6 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
          TH1D *h_recHits_EEM_iYoccupancy;
 	 TH2D *h_recHits_EEM_occupancy;
 	 TH2D *h_recHits_EEM_deviation;
-         
-         // ... endcap digis
-	 TH1D* h_digis_EEP_ped_mean;
-         TH1D* h_digis_EEP_ped_rms;
-         TH1D* h_digis_EEM_ped_mean;
-         TH1D* h_digis_EEM_ped_rms;
-         TH1D* h_digisFromRechit_EEP_ped_mean;
-         TH1D* h_digisFromRechit_EEP_ped_rms;
-         TH1D* h_digisFromRechit_EEM_ped_mean;
-         TH1D* h_digisFromRechit_EEM_ped_rms;
-         TH2D *h_digis_EEP_occupancy;
-         TH2D *h_digis_EEM_occupancy;
-
-         // ... endcap noise
-	 TH1D* h_HF_noise_EEP;
-         TH1D* h_LF_noise_EEP;
-         TH1D* h_Total_noise_EEP;
-         TH1D* h_HF_noise_EEM;
-         TH1D* h_LF_noise_EEM;
-         TH1D* h_Total_noise_EEM;
-         TH1D* h_HF_noise_FromRechit_EEP;
-         TH1D* h_LF_noise_FromRechit_EEP;
-         TH1D* h_Total_noise_FromRechit_EEP;
-         TH1D* h_HF_noise_FromRechit_EEM;
-         TH1D* h_LF_noise_FromRechit_EEM;
-         TH1D* h_Total_noise_FromRechit_EEM;
        
 	 // ... All
          TH1D *h_recHits_recoFlag;
@@ -583,6 +481,7 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
 	 TH1D *h_superClusters_EB_nBC;
 	 TH1D *h_superClusters_EB_energy;
 	 TH1D *h_superClusters_EB_E1oE4;
+         TH2D *h_superClusters_EB_occupancy;
 
 	 // ... barrel (with spike cleaning)
 	 TH1D *h_superClusters_EB_size_cleaned;
@@ -600,6 +499,7 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
 	 TH1D *h_superClusters_EEP_rawEnergy;
 	 TH1D *h_superClusters_EEP_rawEt;
 	 TH1D *h_superClusters_EEP_E1oE4; 
+         TH2D *h_superClusters_EEP_occupancy;
 	 
 	 TH1D *h_superClusters_EEM_size;
 	 TH1D *h_superClusters_EEM_nXtals;
@@ -608,8 +508,12 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
 	 TH1D *h_superClusters_EEM_rawEnergy;
 	 TH1D *h_superClusters_EEM_rawEt;
 	 TH1D *h_superClusters_EEM_E1oE4; 
+         TH2D *h_superClusters_EEM_occupancy;
 	 
+         TH2D *h_superClusters_occupancyPhiEta;
+         
 	 TH1D *h_superClusters_eta;
+         TH1D *h_superClusters_eta_scCut;
 	 TH1D *h_superClusters_EB_eta;
 	 TH1D *h_superClusters_EE_eta;
 	 TH1D *h_superClusters_EB_phi;
@@ -660,50 +564,10 @@ class EcalValidation_Samples : public edm::EDAnalyzer {
          TH2D *h2_superClusters_EB_seedTimeVsEnergy;
          TH2D *h2_superClusters_EE_seedTimeVsEnergy;
 	 
-	 
-	 // PRESHOWER ----------------------------------------------
-	 
-	 TH1D *h_recHits_ES_size;
-	 TH1D *h_recHits_ES_size_F[2];
-	 TH1D *h_recHits_ES_size_R[2];
-
-
-	 TH1D *h_recHits_ES_energy;
-	 TH1D *h_recHits_ES_energy_F[2];
-	 TH1D *h_recHits_ES_energy_R[2];
-
-	 TH1D *h_recHits_ES_energyMax;
-	 TH1D *h_recHits_ES_energyMax_F[2];
-	 TH1D *h_recHits_ES_energyMax_R[2];
-	
-	 TH1D *h_recHits_ES_time;
-	 TH1D *h_recHits_ES_time_F[2];
-	 TH1D *h_recHits_ES_time_R[2];
-
 	 TH1D *h_esClusters_energy_plane1;
 	 TH1D *h_esClusters_energy_plane2;
 	 TH1D *h_esClusters_energy_ratio;
 	 
-	 TH1D* h_recHits_ES_recoFlag;
-
-	 TH1D *h_PulseShape_ES_kESGood;
-	 TH1D *h_PulseShape_ES_kESDead;
-	 TH1D *h_PulseShape_ES_kESHot;
-	 TH1D *h_PulseShape_ES_kESPassBX;
-	 TH1D *h_PulseShape_ES_kESTwoGoodRatios;
-	 TH1D *h_PulseShape_ES_kESBadRatioFor12;
-	 TH1D *h_PulseShape_ES_kESBadRatioFor23Upper;
-	 TH1D *h_PulseShape_ES_kESBadRatioFor23Lower;
-	 TH1D *h_PulseShape_ES_kESTS1Largest;
-	 TH1D *h_PulseShape_ES_kESTS3Largest;
-	 TH1D *h_PulseShape_ES_kESTS3Negative;
-	 TH1D *h_PulseShape_ES_kESSaturated;
-	 TH1D *h_PulseShape_ES_kESTS2Saturated;
-	 TH1D *h_PulseShape_ES_kESTS3Saturated;
-	 TH1D *h_PulseShape_ES_kESTS13Sigmas;
-	 TH1D *h_PulseShape_ES_kESTS15Sigmas;
-	 TH1D *h_PulseShape_ES_flag;
-
 	 // Pi0 peak ----------------------------------------------
 
 	 TH1D *h_Pi0_EB_mass;
