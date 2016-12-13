@@ -5,16 +5,62 @@
 #include <memory>
 
 // user include files
+// user include files
 #include "FWCore/Framework/interface/Frameworkfwd.h"
 #include "FWCore/Framework/interface/EDAnalyzer.h"
 
-#include "FWCore/Framework/interface/ESHandle.h"
 #include "FWCore/Framework/interface/Event.h"
 #include "FWCore/Framework/interface/MakerMacros.h"
+#include "FWCore/Common/interface/EventBase.h"
+#include "DataFormats/Provenance/interface/EventAuxiliary.h"
 
 #include "FWCore/ParameterSet/interface/ParameterSet.h"
 #include "FWCore/ServiceRegistry/interface/Service.h"
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
+
+#include "Geometry/CaloTopology/interface/CaloTopology.h"
+#include "Geometry/CaloGeometry/interface/CaloGeometry.h"
+#include "Geometry/CaloGeometry/interface/CaloSubdetectorGeometry.h"
+#include "Geometry/CaloEventSetup/interface/CaloTopologyRecord.h"
+#include "Geometry/CaloTopology/interface/CaloSubdetectorTopology.h"
+#include "DataFormats/GeometryVector/interface/GlobalPoint.h"
+#include "Geometry/EcalAlgo/interface/EcalBarrelGeometry.h"
+#include "Geometry/EcalAlgo/interface/EcalEndcapGeometry.h"
+
+#include "DataFormats/EcalDetId/interface/EBDetId.h"
+#include "DataFormats/EcalDetId/interface/EEDetId.h"
+#include "DataFormats/EcalDetId/interface/ESDetId.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
+#include "DataFormats/EgammaReco/interface/SuperCluster.h"
+#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
+#include "DataFormats/EgammaReco/interface/BasicCluster.h"
+#include "DataFormats/EgammaReco/interface/BasicClusterFwd.h"
+#include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
+#include "DataFormats/EgammaReco/interface/PreshowerClusterFwd.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalTools.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgo.h"
+#include "RecoLocalCalo/EcalRecAlgos/interface/EcalCleaningAlgo.h"
+#include "RecoEcal/EgammaCoreTools/interface/EcalRecHitLess.h"
+#include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbService.h"
+#include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbRecord.h"
+
+
+#include "DataFormats/TrackReco/interface/Track.h"
+#include "DataFormats/TrackReco/interface/TrackFwd.h"
+
+#include "RecoEgamma/EgammaTools/interface/ECALPositionCalculator.h"
+
+#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/CaloJetCollection.h"
+#include "CondFormats/EcalObjects/interface/EcalPedestals.h"
+#include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
+
+#include "Validation/EcalValidation/interface/EcalValidationDigiless.h"
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
+#include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
+#include "MagneticField/Engine/interface/MagneticField.h"
 
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
 
@@ -33,6 +79,11 @@
 #include <cmath>
 #include <fstream>
 #include <map>
+
+using namespace cms ;
+using namespace edm ;
+using namespace std ;
+using namespace reco;
 
 
 // Less than operator for sorting EcalRecHits according to energy.
@@ -74,22 +125,22 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
   
 
 	 // ----------member data ---------------------------
-         edm::InputTag PVTag_;
-	 edm::InputTag recHitCollection_EB_;
-	 edm::InputTag recHitCollection_EE_;
-         edm::InputTag redRecHitCollection_EB_;
-         edm::InputTag redRecHitCollection_EE_;
-         edm::InputTag basicClusterCollection_EB_;
-	 edm::InputTag basicClusterCollection_EE_;
-	 edm::InputTag superClusterCollection_EB_;
-	 edm::InputTag superClusterCollection_EE_;
-	 edm::InputTag esRecHitCollection_;
-	 edm::InputTag esClusterCollectionX_ ;
-	 edm::InputTag esClusterCollectionY_ ;
+         edm::EDGetTokenT<reco::VertexCollection> PV_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EB_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EE_;
+         edm::EDGetTokenT<EcalRecHitCollection> redRecHitCollection_EB_;
+         edm::EDGetTokenT<EcalRecHitCollection> redRecHitCollection_EE_;
+         edm::EDGetTokenT<reco::BasicClusterCollection> basicClusterCollection_EB_;
+	 edm::EDGetTokenT<reco::BasicClusterCollection> basicClusterCollection_EE_;
+	 edm::EDGetTokenT<reco::SuperClusterCollection> superClusterCollection_EB_;
+	 edm::EDGetTokenT<reco::SuperClusterCollection> superClusterCollection_EE_;
+	 edm::EDGetTokenT<ESRecHitCollection> esRecHitCollection_;
+	 edm::EDGetTokenT<PreshowerClusterCollection> esClusterCollectionX_ ;
+	 edm::EDGetTokenT<PreshowerClusterCollection> esClusterCollectionY_ ;
 
-	 edm::InputTag tracks_ ;
-	 edm::InputTag beamSpot_ ;
-         edm::InputTag jets_;
+	 edm::EDGetTokenT<edm::View<reco::Track> > tracks_ ;
+	 edm::EDGetTokenT<reco::BeamSpot> beamSpot_ ;
+         edm::EDGetTokenT<reco::CaloJetCollection> jets_;
 	 
 	 double ethrEB_;
 	 double ethrEE_;
@@ -97,16 +148,6 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 
 	 double scEtThrEB_;
 	 double scEtThrEE_;
-         
-	 std::ofstream noisyChannelsFileEB_cut6;
-	 std::ofstream noisyChannelsFileEEP_cut6;
-	 std::ofstream noisyChannelsFileEEM_cut6;
-	 std::ofstream noisyChannelsFileEB_cut3;
-	 std::ofstream noisyChannelsFileEEP_cut3;
-	 std::ofstream noisyChannelsFileEEM_cut3;
-	 std::ofstream noisyChannelsFileSC;
-         FILE *f_noisyChannelsSC;
-
 
 	 // for Pi0
 	 PositionCalc posCalculator_ ;
@@ -172,7 +213,6 @@ class EcalValidationDigiless : public edm::EDAnalyzer {
 	 
 	 TH1D *h_numberOfEvents;
          TH1D* h_PV_n;
-         TH1D* h_PV_cut_n;
          
 	 // ReducedRecHits ----------------------------------------------
 	 // ... barrel 

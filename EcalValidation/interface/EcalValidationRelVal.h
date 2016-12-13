@@ -17,7 +17,13 @@
 #include "CommonTools/UtilAlgos/interface/TFileService.h"
 
 #include "RecoEcal/EgammaCoreTools/interface/PositionCalc.h"
+#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
+#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
 
+#include "DataFormats/JetReco/interface/CaloJet.h"
+#include "DataFormats/JetReco/interface/CaloJetCollection.h"
+
+#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 
 // ROOT include
 #include "TFile.h"
@@ -25,7 +31,6 @@
 #include "TH2.h"
 #include "TProfile.h"
 #include "TProfile2D.h"
-
 
 // Less than operator for sorting EcalRecHits according to energy.
 class ecalRecHitLess : public std::binary_function<EcalRecHit, EcalRecHit, bool>
@@ -66,23 +71,13 @@ class EcalValidationRelVal : public edm::EDAnalyzer {
   
 
 	 // ----------member data ---------------------------
-	 edm::InputTag recHitCollection_EB_;
-	 edm::InputTag recHitCollection_EE_;
-         //edm::InputTag redRecHitCollection_EB_;
-         //edm::InputTag redRecHitCollection_EE_;
-         //edm::InputTag basicClusterCollection_EB_;
-	 //edm::InputTag basicClusterCollection_EE_;
-	 //edm::InputTag superClusterCollection_EB_;
-	 //edm::InputTag superClusterCollection_EE_;
-	 //edm::InputTag esRecHitCollection_;
-	 //edm::InputTag esClusterCollectionX_ ;
-	 //edm::InputTag esClusterCollectionY_ ;
-         edm::InputTag ebDigiCollection_ ;
-	 edm::InputTag eeDigiCollection_ ;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EB_;
+	 edm::EDGetTokenT<EcalRecHitCollection> recHitCollection_EE_;
+     edm::EDGetTokenT<EBDigiCollection> ebDigiCollection_ ;
+	 edm::EDGetTokenT<EEDigiCollection> eeDigiCollection_ ;
 
-	 //edm::InputTag tracks_ ;
-	 edm::InputTag beamSpot_ ;
-         edm::InputTag jets_;
+	 edm::EDGetTokenT<reco::BeamSpot> beamSpot_ ;
+     edm::EDGetTokenT<reco::CaloJetCollection> jets_;
 	 
 	 double ethrEB_;
 	 double ethrEE_;
@@ -154,7 +149,7 @@ class EcalValidationRelVal : public edm::EDAnalyzer {
 	 // ------------- HISTOGRAMS ------------------------------------
 
 	 int naiveId_;
-         float runId_;
+     float runId_;
 	 
 	 TH1D *h_numberOfEvents;
          
@@ -179,15 +174,15 @@ class EcalValidationRelVal : public edm::EDAnalyzer {
         std::map <int,TH1D*> HF_noise_Eta_map;
   	std::map <int,TH1D*> LF_noise_Eta_map;
   	std::map <int,TH1D*> Total_noise_Eta_map;
+        std::map <int,TH1D*> HF_noise_Eta_map_ped;
+  	std::map <int,TH1D*> LF_noise_Eta_map_ped;
+  	std::map <int,TH1D*> Total_noise_Eta_map_ped;
   	std::map <int,TH1D*> HF_noise_FromRechit_Eta_map;
   	std::map <int,TH1D*> LF_noise_FromRechit_Eta_map;
   	std::map <int,TH1D*> Total_noise_FromRechit_Eta_map;
         std::map <int,TH1D*> HF_noise_FromRechit_Eta_map_ped;
   	std::map <int,TH1D*> LF_noise_FromRechit_Eta_map_ped;
   	std::map <int,TH1D*> Total_noise_FromRechit_Eta_map_ped;
-        std::map <int,TH1D*> HF_noise_Eta_map_ped;
-  	std::map <int,TH1D*> LF_noise_Eta_map_ped;
-  	std::map <int,TH1D*> Total_noise_Eta_map_ped;
         std::map <int,TH1D*> Amplitude_FromRechit_Eta;
         std::map <int,TH1D*> Amplitude_Eta;
 
@@ -217,12 +212,12 @@ class EcalValidationRelVal : public edm::EDAnalyzer {
          TH1D* h_HF_noise_FromRechit_vs_Eta_ped;
          TH1D* h_LF_noise_FromRechit_vs_Eta_ped;
          TH1D* h_Total_noise_FromRechit_vs_Eta_ped;
-         TH1D* h_HF_noise_vs_Eta_ped;
-         TH1D* h_LF_noise_vs_Eta_ped;
-         TH1D* h_Total_noise_vs_Eta_ped;
          TH1D* h_HF_noise_vs_Eta;
          TH1D* h_LF_noise_vs_Eta;
          TH1D* h_Total_noise_vs_Eta;
+         TH1D* h_HF_noise_vs_Eta_ped;
+         TH1D* h_LF_noise_vs_Eta_ped;
+         TH1D* h_Total_noise_vs_Eta_ped;
          TH1D* h_HF_noise_vs_iEta;
          TH1D* h_LF_noise_vs_iEta;
          TH1D* h_Total_noise_vs_iEta;

@@ -1,7 +1,7 @@
 // -*- C++ -*-
 //
-// Package:    EcalValidation
-// Class:      EcalValidation
+// Package:    EcalValidationRelVal_rechitless
+// Class:      EcalValidationRelVal_rechitless
 // Original Author:  Martina Malberti
 // 
 // system include files
@@ -33,14 +33,6 @@
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
 #include "DataFormats/EcalDetId/interface/ESDetId.h"
-#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-#include "DataFormats/EgammaReco/interface/SuperCluster.h"
-#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
-#include "DataFormats/EgammaReco/interface/BasicCluster.h"
-#include "DataFormats/EgammaReco/interface/BasicClusterFwd.h"
-#include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
-#include "DataFormats/EgammaReco/interface/PreshowerClusterFwd.h"
 #include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
 #include "RecoEcal/EgammaCoreTools/interface/EcalTools.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgo.h"
@@ -49,18 +41,12 @@
 #include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbService.h"
 #include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbRecord.h"
 
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-
 #include "RecoEgamma/EgammaTools/interface/ECALPositionCalculator.h"
 
-#include "DataFormats/JetReco/interface/CaloJet.h"
-#include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
 
 #include "Validation/EcalValidation/interface/EcalValidationRelVal_rechitless.h"
-#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 
@@ -82,32 +68,17 @@ using namespace reco;
 EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::ParameterSet& ps)
 {
   //now do what ever initialization is needed
-  //recHitCollection_EB_       = ps.getParameter<edm::InputTag>("recHitCollection_EB");
-  //recHitCollection_EE_       = ps.getParameter<edm::InputTag>("recHitCollection_EE");
-  //redRecHitCollection_EB_    = ps.getParameter<edm::InputTag>("redRecHitCollection_EB");
-  //redRecHitCollection_EE_    = ps.getParameter<edm::InputTag>("redRecHitCollection_EE");
-  //basicClusterCollection_EB_ = ps.getParameter<edm::InputTag>("basicClusterCollection_EB");
-  //basicClusterCollection_EE_ = ps.getParameter<edm::InputTag>("basicClusterCollection_EE");
-  //superClusterCollection_EB_ = ps.getParameter<edm::InputTag>("superClusterCollection_EB");
-  //superClusterCollection_EE_ = ps.getParameter<edm::InputTag>("superClusterCollection_EE");
-  //esRecHitCollection_        = ps.getParameter<edm::InputTag>("recHitCollection_ES");
-  //esClusterCollectionX_      = ps.getParameter<edm::InputTag>("ClusterCollectionX_ES");
-  //esClusterCollectionY_      = ps.getParameter<edm::InputTag>("ClusterCollectionY_ES");
-  ebDigiCollection_          = ps.getParameter<edm::InputTag>("ebDigiCollection");
-  eeDigiCollection_          = ps.getParameter<edm::InputTag>("eeDigiCollection");
+  ebDigiCollection_          = consumes<EBDigiCollection>(ps.getParameter<edm::InputTag>("ebDigiCollection"));
+  eeDigiCollection_          = consumes<EEDigiCollection>(ps.getParameter<edm::InputTag>("eeDigiCollection"));
 
-  //tracks_                    = ps.getParameter<edm::InputTag>("tracks");
-  beamSpot_                  = ps.getParameter<edm::InputTag>("beamSpot");
-  //jets_                      = ps.getParameter<edm::InputTag>("jets");
-
+  beamSpot_                  = consumes<reco::BeamSpot>         (ps.getParameter<edm::InputTag>("beamSpot"));
+   
   ethrEB_                    = ps.getParameter<double>("ethrEB");
   ethrEE_                    = ps.getParameter<double>("ethrEE");
   gainId_                    = ps.getParameter<double>("gainId");
 
   scEtThrEB_                 = ps.getParameter<double>("scEtThrEB");
   scEtThrEE_                 = ps.getParameter<double>("scEtThrEE");
-
-  runId_                     = ps.getParameter<double>("runId");
   
   ///for Pi0 barrel selection
   isMonEBpi0_ = ps.getUntrackedParameter<bool>("isMonEBpi0",false);
@@ -166,6 +137,8 @@ EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::Para
   seleXtalMinEnergy_ = ps.getParameter<double>("seleXtalMinEnergy");
   seleXtalMinEnergy_EE_ = ps.getParameter<double>("seleXtalMinEnergy_EE");
 
+  runId_                     = ps.getParameter<double>("runId");
+
   edm::ParameterSet posCalcParameters = ps.getParameter<edm::ParameterSet>("posCalcParameters");
   posCalculator_ = PositionCalc(posCalcParameters);
 
@@ -190,8 +163,7 @@ EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::Para
   h_redRecHits_EE_recoFlag = fs->make<TH1D>("h_redRecHits_EE_recoFlag","h_redRecHits_EE_recoFlag",16,-0.5,15.5);  
   // ... all 
   h_redRecHits_recoFlag = fs->make<TH1D>("h_redRecHits_recoFlag","h_redRecHits_recoFlag",16,-0.5,15.5);  
-
-  
+   
   // RecHits ---------------------------------------------- 
   
   // ... DataBase noise map
@@ -240,7 +212,7 @@ EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::Para
   h_HF_noise_FromRechit_vs_Eta_ped = fs->make<TH1D>("h_HF_noise_FromRechit_vs_Eta_ped", "h_HF_noise_FromRechit_vs_Eta_ped", nBins_noise,bin_min_noise,bin_max_noise);
   h_LF_noise_FromRechit_vs_Eta_ped = fs->make<TH1D>("h_LF_noise_FromRechit_vs_Eta_ped", "h_LF_noise_FromRechit_vs_Eta_ped", nBins_noise,bin_min_noise,bin_max_noise );
   h_Total_noise_FromRechit_vs_Eta_ped = fs->make<TH1D>("h_Total_noise_FromRechit_vs_Eta_ped", "h_Total_noise_FromRechit_vs_Eta_ped", nBins_noise,bin_min_noise,bin_max_noise);
-
+  
   h_HF_noise_vs_Eta_ped = fs->make<TH1D>("h_HF_noise_vs_Eta_ped", "h_HF_noise_vs_Eta_ped", nBins_noise,bin_min_noise,bin_max_noise);
   h_LF_noise_vs_Eta_ped = fs->make<TH1D>("h_LF_noise_vs_Eta_ped", "h_LF_noise_vs_Eta_ped", nBins_noise,bin_min_noise,bin_max_noise );
   h_Total_noise_vs_Eta_ped = fs->make<TH1D>("h_Total_noise_vs_Eta_ped", "h_Total_noise_vs_Eta_ped", nBins_noise,bin_min_noise,bin_max_noise);
@@ -276,10 +248,10 @@ EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::Para
   h_Amplitude_FromRechit_ixiy_EEM     = fs->make<TH2D>("h_Amplitude_FromRechit_ixiy_EEM","h_Amplitude_FromRechit_ixiy_EEM",100,0.,100.,100,0.,100. );
 
   // ... barrel
-  h_recHits_EB_size          = fs->make<TH1D>("h_recHits_EB_size", "h_recHitsEB_size", 1000, 0, 1000 );
+  h_recHits_EB_size          = fs->make<TH1D>("h_recHits_EB_size", "h_recHitsEB_size", 100000, 0, 100000 );
   h_recHits_EB_energy        = fs->make<TH1D>("h_recHits_EB_energy","h_recHitsEB_energy",11000,-50,500);
   h_recHits_EB_energyMax     = fs->make<TH1D>("h_recHits_EB_energyMax","h_recHitsEB_energyMax",2000,-50,500);
-  h_recHits_EB_sumEt    = fs->make<TH1D>("h_recHits_EB_sumEt","h_recHits_EB_sumEt",2000,0,1000);
+  h_recHits_EB_sumEt         = fs->make<TH1D>("h_recHits_EB_sumEt","h_recHits_EB_sumEt",40000,0,20000);
   h_recHits_EB_time          = fs->make<TH1D>("h_recHits_EB_time","h_recHits_EB_time",400,-100,100);
   h_recHits_EB_Chi2          = fs->make<TH1D>("h_recHits_EB_Chi2","h_recHits_EB_Chi2",1000,0,100);
   h_recHits_EB_OutOfTimeChi2 = fs->make<TH1D>("h_recHits_EB_OutOfTimeChi2","h_recHits_EB_OutOfTimeChi2",1000,0,100);  
@@ -293,19 +265,19 @@ EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::Para
   h_recHits_EB_energy_spike  = fs->make<TH1D>("h_recHits_EB_energy_spike","h_recHitsEB_energy_spike",2000,0,500);
   
   // ... barrel digis
-  h_digis_EB_ped_mean        = fs->make<TH1D>("h_digis_EB_ped_mean","h_digis_EB_ped_mean",60,190,210);
-  h_digis_EB_ped_rms         = fs->make<TH1D>("h_digis_EB_ped_rms","h_digis_EB_ped_rms",30,0,4);
+  h_digis_EB_ped_mean        = fs->make<TH1D>("h_digis_EB_ped_mean","h_digis_EB_ped_mean",50,175,225);
+  h_digis_EB_ped_rms         = fs->make<TH1D>("h_digis_EB_ped_rms","h_digis_EB_ped_rms",70,0,10);
   h_digis_EB_occupancy     = fs->make<TH2D>("h_digis_EB_occupancy","h_digis_EB_occupancy",360,1.,361.,172,-86.,86. );
-  h_digisFromRechit_EB_ped_mean        = fs->make<TH1D>("h_digisFromRechit_EB_ped_mean","h_digisFromRechit_EB_ped_mean",60,190,210);
-  h_digisFromRechit_EB_ped_rms         = fs->make<TH1D>("h_digisFromRechit_EB_ped_rms","h_digisFromRechit_EB_ped_rms",30,0,4);
+  h_digisFromRechit_EB_ped_mean        = fs->make<TH1D>("h_digisFromRechit_EB_ped_mean","h_digisFromRechit_EB_ped_mean",45,170,230);
+  h_digisFromRechit_EB_ped_rms         = fs->make<TH1D>("h_digisFromRechit_EB_ped_rms","h_digisFromRechit_EB_ped_rms",70,0,12);
   
   // ...barrel noise
-  h_HF_noise_EB = fs->make<TH1D>("h_HF_noise_EB","h_HF_noise_EB", 30,-8 ,8 );
-  h_LF_noise_EB = fs->make<TH1D>("h_LF_noise_EB","h_LF_noise_EB",50 ,-8 ,8);
-  h_Total_noise_EB = fs->make<TH1D>("h_Total_noise_EB","h_Total_noise_EB", 16,-8 ,8 );
-  h_HF_noise_FromRechit_EB = fs->make<TH1D>("h_HF_noise_FromRechit_EB","h_HF_noise_FromRechit_EB", 30,-8 ,8 );
-  h_LF_noise_FromRechit_EB = fs->make<TH1D>("h_LF_noise_FromRechit_EB","h_LF_noise_FromRechit_EB",50 ,-8 ,8);
-  h_Total_noise_FromRechit_EB = fs->make<TH1D>("h_Total_noise_FromRechit_EB","h_Total_noise_FromRechit_EB", 18,-8 ,10 );
+  h_HF_noise_EB = fs->make<TH1D>("h_HF_noise_EB","h_HF_noise_EB", 30,-10 ,10 );
+  h_LF_noise_EB = fs->make<TH1D>("h_LF_noise_EB","h_LF_noise_EB",50 ,-10 ,10);
+  h_Total_noise_EB = fs->make<TH1D>("h_Total_noise_EB","h_Total_noise_EB", 20,-11 ,11 );
+  h_HF_noise_FromRechit_EB = fs->make<TH1D>("h_HF_noise_FromRechit_EB","h_HF_noise_FromRechit_EB", 25,-15 ,15 );
+  h_LF_noise_FromRechit_EB = fs->make<TH1D>("h_LF_noise_FromRechit_EB","h_LF_noise_FromRechit_EB",80 ,-15 ,15);
+  h_Total_noise_FromRechit_EB = fs->make<TH1D>("h_Total_noise_FromRechit_EB","h_Total_noise_FromRechit_EB", 40,-20 ,20 );
   
   // ... barrel (with spike cleaning)
   h_recHits_EB_size_cleaned          = fs->make<TH1D>("h_recHits_EB_size_cleaned", "h_recHitsEB_size_cleaned", 1000, 0, 10000 );
@@ -474,7 +446,7 @@ EcalValidationRelVal_rechitless::EcalValidationRelVal_rechitless(const edm::Para
   // Basic Clusters ----------------------------------------------    
   
   // ... barrel
-  h_basicClusters_EB_size    = fs->make<TH1D>("h_basicClusters_EB_size","h_basicClusters_EB_size",200,0.,200.);
+  h_basicClusters_EB_size    = fs->make<TH1D>("h_basicClusters_EB_size","h_basicClusters_EB_size",100000,0.,100000.);
   h_basicClusters_EB_nXtals  = fs->make<TH1D>("h_basicClusters_EB_nXtals","h_basicClusters_EB_nXtals",400,0.,400.);
   h_basicClusters_EB_energy  = fs->make<TH1D>("h_basicClusters_EB_energy","h_basicClusters_EB_energy",2000,0.,400.);
  
@@ -767,1806 +739,288 @@ void EcalValidationRelVal_rechitless::analyze(const edm::Event& ev, const edm::E
 //   float bx      = ev.bunchCrossing();
 //   float ls      = ev.luminosityBlock();
 //   float orbitNb = ev.orbitNumber();
-  
+
+
   //runId
   bool bad_event_ = true;
   int run_id = ev.id().run();
   int db_runId = int(runId_);
-  //std::cout << "RunId 1: " << naiveId_ << " - " << bad_event_ << " - " << run_id << " - " << int(runId_) << std::endl; 
+    //std::cout << "RunId 1: " << naiveId_ << " - " << bad_event_ << " - " << run_id << " - " << int(runId_) << std::endl; 
   if(run_id == db_runId) bad_event_ = false;
   if(bad_event_ == false){
-  //std::cout << "RunId 2: " << naiveId_ << " - " << bad_event_ << " - " << run_id << " - " << int(runId_) << std::endl; 
+	//Get the magnetic field
+	edm::ESHandle<MagneticField> theMagField;
+	iSetup.get<IdealMagneticFieldRecord>().get(theMagField);
+	//DataBase LaserCorrection
+	edm::ESHandle<EcalLaserDbService> theLaser;
+	iSetup.get<EcalLaserDbRecord>().get(theLaser);
+	
+	// calo geometry
+	edm::ESHandle<CaloGeometry> pGeometry;
+	iSetup.get<CaloGeometryRecord>().get(pGeometry);
+	const CaloGeometry *geometry = pGeometry.product();
 
-  //Get the BS position
-  /*edm::Handle<reco::BeamSpot> recoBeamSpotHandle;
-  ev.getByLabel(beamSpot_,recoBeamSpotHandle);
-  const reco::BeamSpot::Point& BSPosition = recoBeamSpotHandle->position(); */
-  //Get tracks
-  /*edm::Handle<edm::View<reco::Track> > TracksHandle ;
-  ev.getByLabel (tracks_, TracksHandle) ;*/
-  //Get the magnetic field
-  edm::ESHandle<MagneticField> theMagField;
-  iSetup.get<IdealMagneticFieldRecord>().get(theMagField);
-  //DataBase noise
-  /*edm::ESHandle<EcalPedestals> dbPed   ;
-  iSetup.get<EcalPedestalsRcd>().get( dbPed ) ;
-  const EcalPedestals* pedestals ( dbPed.product() ) ;*/
-  //DataBase LaserCorrection
-  edm::ESHandle<EcalLaserDbService> theLaser;
-  iSetup.get<EcalLaserDbRecord>().get(theLaser);
-  
-  naiveId_++;
-  
-  //std::cout << "EVENT: " << naiveId_ << std::endl;
+	// --- DIGI HITS ------------------------------------------------------------------------------------- 
 
-  // calo geometry
-  edm::ESHandle<CaloGeometry> pGeometry;
-  iSetup.get<CaloGeometryRecord>().get(pGeometry);
-  const CaloGeometry *geometry = pGeometry.product();
+	// ... digis barrel
+	edm::Handle<EBDigiCollection> ebDigis;
+	ev.getByToken(ebDigiCollection_, ebDigis) ;
+	const EBDigiCollection* theEcalBarrelDigis = ebDigis.product () ;  
+	if (! (ebDigis.isValid ()) ) {
+	  std::cerr << "EcalValidationRelVal_rechitless::analyze -->  ebDigis not found" << std::endl; 
+	}
+	  
+	EBDetId ebid_MrecHitEB;
+	
+	float weights_EB[10]={-0.33333,-0.33333,-0.33333,0,0,1,0,0,0,0};
+	float weights_EE[10]={-0.33333,-0.33333,-0.33333,0,0,1,0,0,0,0};
+	
+	// ... noise vs eta
+	int nBins_noise = 30;
+	float bin_min_noise = -3;
+	float bin_max_noise = 3;
 
-//   const CaloSubdetectorGeometry *geometry_EB = geometry->getSubdetectorGeometry(DetId::Ecal,EcalBarrel);
-//   const CaloSubdetectorGeometry *geometry_EE = geometry->getSubdetectorGeometry(DetId::Ecal,EcalEndcap);
-
-  // calo topology
-  /*edm::ESHandle<CaloTopology> pTopology;
-  iSetup.get<CaloTopologyRecord>().get(pTopology);
-  const CaloTopology *topology = pTopology.product();*/
-
-  // --- REDUCED REC HITS ------------------------------------------------------------------------------------- 
-  /*edm::Handle<EcalRecHitCollection> redRecHitsEB;
-  ev.getByLabel( redRecHitCollection_EB_, redRecHitsEB );
-  const EcalRecHitCollection* theBarrelEcalredRecHits = redRecHitsEB.product () ;
-  if ( ! redRecHitsEB.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> redRecHitsEB not found" << std::endl; 
-  }
-  
-  for ( EcalRecHitCollection::const_iterator itr = theBarrelEcalredRecHits->begin () ;
-        itr != theBarrelEcalredRecHits->end () ;++itr)
-  {
-      
-    h_redRecHits_EB_recoFlag      -> Fill( itr -> recoFlag() );
-    h_redRecHits_recoFlag         -> Fill( itr -> recoFlag() );
-  
-  }
-  
-  // ... endcap
-  edm::Handle<EcalRecHitCollection> redRecHitsEE;
-  ev.getByLabel( redRecHitCollection_EE_, redRecHitsEE );
-  const EcalRecHitCollection* theEndcapEcalredRecHits = redRecHitsEE.product () ;
-  if ( ! redRecHitsEE.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> redRecHitsEE not found" << std::endl; 
-  }
-  
-  for ( EcalRecHitCollection::const_iterator itr = theEndcapEcalredRecHits->begin () ;
-        itr != theEndcapEcalredRecHits->end () ; ++itr)
-  {
-      
-      EEDetId eeid( itr -> id() );
-      h_redRecHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
-      h_redRecHits_recoFlag          -> Fill( itr -> recoFlag() );
-
-  }*/
-
-  // --- REC HITS ------------------------------------------------------------------------------------- 
-  
-  // ... barrel
-  /*edm::Handle<EcalRecHitCollection> recHitsEB;
-  ev.getByLabel( recHitCollection_EB_, recHitsEB );
-  const EcalRecHitCollection* theBarrelEcalRecHits = recHitsEB.product () ;
-  if ( ! recHitsEB.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> recHitsEB not found" << std::endl; 
-  }*/
-
-  // ... digis barrel
-  edm::Handle<EBDigiCollection> ebDigis;
-  ev.getByLabel (ebDigiCollection_, ebDigis) ;
-  const EBDigiCollection* theEcalBarrelDigis = ebDigis.product () ;  
-  if (! (ebDigis.isValid ()) ) {
-    std::cerr << "EcalValidation::analyze -->  ebDigis not found" << std::endl; 
-  }
-    
-  
-  /*float maxRecHitEnergyEB        = -999.;
-  float maxRecHitEtaEB           = -999.;
-  float maxRecHitPhiEB           = -999.;
-  float maxRecHitIEtaEB          = -999.;
-  float maxRecHitEnergyEB_cut6   = -999.;
-  float maxRecHitEtaEB_cut6      = -999.;
-  float maxRecHitPhiEB_cut6      = -999.;
-  float maxRecHitIEtaEB_cut6     = -999.;
-  float maxRecHitEnergyEB_cut5_5 = -999.;
-  float maxRecHitEtaEB_cut5_5    = -999.;
-  float maxRecHitPhiEB_cut5_5    = -999.;
-  float maxRecHitIEtaEB_cut5_5   = -999.;
-  float maxRecHitEnergyEB_cut5   = -999.;
-  float maxRecHitEtaEB_cut5      = -999.;
-  float maxRecHitPhiEB_cut5      = -999.;
-  float maxRecHitIEtaEB_cut5     = -999.;
-  float maxRecHitEnergyEB_cut4_5 = -999.;
-  float maxRecHitEtaEB_cut4_5    = -999.;
-  float maxRecHitPhiEB_cut4_5    = -999.;
-  float maxRecHitIEtaEB_cut4_5   = -999.;
-  float maxRecHitEnergyEB_cut4   = -999.;
-  float maxRecHitEtaEB_cut4      = -999.;
-  float maxRecHitPhiEB_cut4      = -999.;
-  float maxRecHitIEtaEB_cut4     = -999.;
-  float maxRecHitEnergyEB_cut3_5 = -999.;
-  float maxRecHitEtaEB_cut3_5    = -999.;
-  float maxRecHitPhiEB_cut3_5    = -999.;
-  float maxRecHitIEtaEB_cut3_5   = -999.;
-  float maxRecHitEnergyEB_cut3   = -999.;
-  float maxRecHitEtaEB_cut3      = -999.;
-  float maxRecHitPhiEB_cut3      = -999.;
-  float maxRecHitIEtaEB_cut3     = -999.;
-  
-
-  float maxRecHitEnergyEBcleaned = -999.;
-  
-  float maxEtRecHitEnergyEB = -999.;
-  float maxEtRecHitEtaEB    = -999.;
-  float maxEtRecHitPhiEB    = -999.;
-  float RecHitEtaEB         = -999.;*/
-  
-  EBDetId ebid_MrecHitEB;
-  
- // bool  hasSpike = false;
-  
-  float weights_EB[10]={-0.33333,-0.33333,-0.33333,0,0,1,0,0,0,0};
-  float weights_EE[10]={-0.33333,-0.33333,-0.33333,0,0,1,0,0,0,0};
-  
-  // ... noise vs eta
-  int nBins_noise = 30;
-  float bin_min_noise = -3;
-  float bin_max_noise = 3;
-
-  
-  TH1D* h_Eta_map = new TH1D("h_Eta_map", "h_Eta_map", nBins_noise,bin_min_noise,bin_max_noise);
-  for(int ii = 1; ii <= nBins_noise; ii++) h_Eta_map -> SetBinContent(ii,ii);
- 
-
-  TH1D* h_ADC_total = new TH1D("","",500,0,500);
-  TH1D* h_ADC_total_ped = new TH1D("","",500,0,500);
-  TH1D* h_ped;
-  TH1D* h_ADC;
-  
-  //int gain = int(gainId_);
-
-  /*for ( EcalRecHitCollection::const_iterator itr = theBarrelEcalRecHits->begin () ;
-	itr != theBarrelEcalRecHits->end () ;++itr)
-    {
-      
-      EBDetId ebid( itr -> id() );
-      GlobalPoint mycell = geometry -> getPosition(DetId(itr->id()));
-      double et = itr -> energy()*mycell.perp()/mycell.mag();   
-      
-      sumRecHitEtEB[naiveId_-1] += et;
+	
+	TH1D* h_Eta_map = new TH1D("h_Eta_map", "h_Eta_map", nBins_noise,bin_min_noise,bin_max_noise);
+	for(int ii = 1; ii <= nBins_noise; ii++) h_Eta_map -> SetBinContent(ii,ii);
    
-      RecHitEtaEB = mycell.eta();
+	TH1D* h_ped;
+	TH1D* h_ADC;
 
-      EcalPedestalsMap::const_iterator itped = pedestals->getMap().find( ebid );
-      float width = (*itped).rms(gain);
-      
-      //std::cout << "EB RMS-event: " << width << " - " << ebid.iphi() << " - "  << ebid.ieta() << " - " <<  naiveId_ << " - " << gain << std::endl;
-  
-      if(h_DB_noiseMap_EB->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0) h_DB_noiseMap_EB->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut6->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 6.) h_DB_noiseMap_EB_cut6->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut5_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 5.5) h_DB_noiseMap_EB_cut5_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 5.) h_DB_noiseMap_EB_cut5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut4_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 4.5) h_DB_noiseMap_EB_cut4_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut4->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 4.) h_DB_noiseMap_EB_cut4->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut3_5->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 3.5) h_DB_noiseMap_EB_cut3_5->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
-      if(h_DB_noiseMap_EB_cut3->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0 &&  width > 3.) h_DB_noiseMap_EB_cut3->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,width);
- 
-      float seedLaserCorrection = theLaser->getLaserCorrection(ebid, ev.time());
-      if(h_DB_LaserCorrMap_EB->GetBinContent(ebid.iphi()-1,ebid.ieta()+86) == 0) h_DB_LaserCorrMap_EB->SetBinContent(ebid.iphi()-1,ebid.ieta()+86,seedLaserCorrection);
-      
-      h_recHits_EB_energy        -> Fill( itr -> energy() );
-      h_recHits_EB_recoFlag      -> Fill( itr -> recoFlag() );
-      h_recHits_recoFlag         -> Fill( itr -> recoFlag() );
-      
-      // max E rec hit
-      if (itr -> energy() > maxRecHitEnergyEB ){
-	maxRecHitEnergyEB = itr -> energy() ;
-	maxRecHitEtaEB = mycell.eta();
-	maxRecHitPhiEB = mycell.phi();
-	maxRecHitIEtaEB = ebid.ieta();
-      }    
-      if (itr -> energy() > maxRecHitEnergyEB_cut6 && width <= 6.){
-	maxRecHitEnergyEB_cut6 = itr -> energy() ;
-	maxRecHitEtaEB_cut6 = mycell.eta();
-	maxRecHitPhiEB_cut6 = mycell.phi(); 
-	maxRecHitIEtaEB_cut6 = ebid.ieta();
-      }   
-      if (itr -> energy() > maxRecHitEnergyEB_cut5_5 && width <= 5.5){
-	maxRecHitEnergyEB_cut5_5 = itr -> energy() ;
-	maxRecHitEtaEB_cut5_5 = mycell.eta();
-	maxRecHitPhiEB_cut5_5 = mycell.phi(); 
-	maxRecHitIEtaEB_cut5_5 = ebid.ieta();
-      }    
-      if (itr -> energy() > maxRecHitEnergyEB_cut5 && width <= 5.){
-	maxRecHitEnergyEB_cut5 = itr -> energy() ;
-	maxRecHitEtaEB_cut5 = mycell.eta();
-	maxRecHitPhiEB_cut5 = mycell.phi(); 
-	maxRecHitIEtaEB_cut5 = ebid.ieta();
-      } 
-      if (itr -> energy() > maxRecHitEnergyEB_cut4_5 && width <= 4.5){
-	maxRecHitEnergyEB_cut4_5 = itr -> energy() ;
-	maxRecHitEtaEB_cut4_5 = mycell.eta();
-	maxRecHitPhiEB_cut4_5 = mycell.phi(); 
-	maxRecHitIEtaEB_cut4_5 = ebid.ieta();
-      }   
-      if (itr -> energy() > maxRecHitEnergyEB_cut4 && width <= 4.){
-	maxRecHitEnergyEB_cut4 = itr -> energy() ;
-	maxRecHitEtaEB_cut4 = mycell.eta();
-	maxRecHitPhiEB_cut4 = mycell.phi(); 
-	maxRecHitIEtaEB_cut4 = ebid.ieta();
-      } 
-      if (itr -> energy() > maxRecHitEnergyEB_cut3_5 && width <= 3.5){
-	maxRecHitEnergyEB_cut3_5 = itr -> energy() ;
-	maxRecHitEtaEB_cut3_5 = mycell.eta();
-	maxRecHitPhiEB_cut3_5 = mycell.phi(); 
-	maxRecHitIEtaEB_cut3_5 = ebid.ieta();
-      } 
-      if (itr -> energy() > maxRecHitEnergyEB_cut3 && width <= 3.){
-	maxRecHitEnergyEB_cut3 = itr -> energy() ;
-	maxRecHitEtaEB_cut3 = mycell.eta();
-	maxRecHitPhiEB_cut3 = mycell.phi(); 
-	maxRecHitIEtaEB_cut3 = ebid.ieta();
-      }        
+	TH1D* h_ADC_total = new TH1D("","",500,0,500);
+	TH1D* h_ADC_total_ped = new TH1D("","",500,0,500);	
+	h_ADC_total = new TH1D("","",500,0,500);
+	
+	for(EBDigiCollection::const_iterator digiItr = theEcalBarrelDigis->begin();
+			digiItr != theEcalBarrelDigis->end();
+			++digiItr)
+		{
 
-      // max Et rec hit
-      if ( et > maxEtRecHitEnergyEB ){
-	maxEtRecHitEnergyEB = et ;
-	maxEtRecHitEtaEB    = mycell.eta();
-	maxEtRecHitPhiEB    = mycell.phi();
-	ebid_MrecHitEB      = ebid;
-      }       
-      
-      if ( itr -> energy() > ethrEB_ ){
-	h_recHits_EB_time          -> Fill( itr -> time() );
-	h_recHits_EB_Chi2          -> Fill( itr -> chi2() );
-	h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
-	h_recHits_EB_occupancy     -> Fill( ebid.iphi() , ebid.ieta() );
-	h_recHits_EB_deviation     -> Fill( ebid.iphi() , ebid.ieta() );
-	h_recHits_EB_iPhiOccupancy -> Fill( ebid.iphi() );
-	h_recHits_EB_iEtaOccupancy -> Fill( ebid.ieta() );
-      }
+			EcalDataFrame df = *digiItr;
+			
+			for (int i=0; i < df.size(); i++ )
+				 h_ADC_total -> Fill(df.sample(i).adc());
+			 
+		}
+	
+	for(EBDigiCollection::const_iterator digiItr = theEcalBarrelDigis->begin();
+			digiItr != theEcalBarrelDigis->end();
+			++digiItr)
+		{
+			
+			EBDetId ebid(digiItr->id());
+			h_digis_EB_occupancy -> Fill( ebid.iphi() , ebid.ieta() );
+			
+			GlobalPoint mycell = geometry -> getPosition(DetId(digiItr->id()));
+			float digiEtaEB = mycell.eta();
+			
+			int bin = h_Eta_map->GetBinContent(h_Eta_map->FindBin(digiEtaEB));
+			
+			EcalDataFrame df = *digiItr;
+			
+			h_ped = new TH1D("","",500,0,500);
+			h_ADC = new TH1D("","",500,0,500);
 
-      float R4 = EcalTools::swissCross( ebid, *theBarrelEcalRecHits, 0. );
-      
-      if ( itr -> energy() > 3. && abs(ebid.ieta())!=85 )  h_recHits_EB_E1oE4-> Fill( R4 );
+			for (int i=0; i < df.size(); i++ )
+			  {
+				
+				h_ped -> Fill(df.sample(i).adc());
 
-      
-      if ( R4 > 0.95 ) {
-	h_recHits_EB_energy_spike       -> Fill( itr -> energy() );
-      }
+				if(i > 2) continue;
+				
+			  }
+			
+			for (int i=0; i < df.size(); i++ )
+				 h_ADC -> Fill(df.sample(i).adc());
+			
+			float Amplitude = 0;
+			
+			for (int i=0; i < df.size(); i++ )
+			  {
+				  Amplitude = Amplitude + df.sample(i).adc()*weights_EB[i];
 
-      // spike cleaning
-      if ( R4 > 0.95 && et > 3.) hasSpike= true;
-      if ( R4 > 0.95 && et > 3.) continue;
-      
-      h_recHits_EB_energy_cleaned -> Fill( itr -> energy() );
-      if ( itr -> energy() > ethrEB_ ){
-	h_recHits_EB_time_cleaned          -> Fill( itr -> time() );
-	h_recHits_EB_Chi2_cleaned          -> Fill( itr -> chi2() );
-	h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
-      }
+				  h_Total_noise_EB -> Fill(df.sample(i).adc()-h_ADC_total->GetMean());
+				  Total_noise_Eta_map[bin-1]->Fill(df.sample(i).adc()-h_ADC_total->GetMean());
+				  Total_noise_iphieta[ebid.iphi()-1][ebid.ieta()+86] -> Fill(df.sample(i).adc()-h_ADC_total->GetMean());
+				  Total_noise_ieta[ebid.ieta()+86]->Fill(df.sample(i).adc()-h_ADC_total->GetMean());
+				  if(i < 3) Total_noise_Eta_map_ped[bin-1]->Fill(df.sample(i).adc()-h_ADC_total_ped->GetMean());
+				  
 
-      // max E rec hit - cleaned
-      if (itr -> energy() > maxRecHitEnergyEBcleaned ){
-	maxRecHitEnergyEBcleaned = itr -> energy() ;
-      }  
-     
-      //... digis barrel from recHit
-   
-      for(EBDigiCollection::const_iterator digiItr = theEcalBarrelDigis->begin();
-          digiItr != theEcalBarrelDigis->end();
-          ++digiItr)
-      { 
-          if( digiItr->id() != ebid )continue;
-          EcalDataFrame df = *digiItr;
-          
-          for (int i=0; i < df.size(); i++ )
-               h_ADC_total -> Fill(df.sample(i).adc());
+				  h_HF_noise_EB ->Fill(df.sample(i).adc()-h_ADC->GetMean());
+				  HF_noise_Eta_map[bin-1]->Fill(df.sample(i).adc()-h_ADC->GetMean());
+				  HF_noise_iphieta[ebid.iphi()-1][ebid.ieta()+86] -> Fill(df.sample(i).adc()-h_ADC->GetMean());
+				  HF_noise_ieta[ebid.ieta()+86]->Fill(df.sample(i).adc()-h_ADC->GetMean());
+				  if(i < 3) HF_noise_Eta_map_ped[bin-1]->Fill(df.sample(i).adc()-h_ped->GetMean());
+			  }
+		
+			 h_LF_noise_EB -> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
+			 LF_noise_Eta_map[bin-1]-> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
+			 LF_noise_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_ped->GetMean());
+			 LF_noise_iphieta[ebid.iphi()-1][ebid.ieta()+86]-> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
+			 LF_noise_ieta[ebid.ieta()+86]->Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
+	 
+			 h_digis_EB_ped_mean ->Fill(h_ped->GetMean());
+			 h_digis_EB_ped_rms ->Fill(h_ped->GetRMS());
 
-          for (int i=0; i < df.size(); i++ ){
-               if(i > 2) continue;
-               h_ADC_total_ped -> Fill(df.sample(i).adc());
-          }
-           
-      }
-      
-      for(EBDigiCollection::const_iterator digiItr = theEcalBarrelDigis->begin();
-          digiItr != theEcalBarrelDigis->end();
-          ++digiItr)
-        {
-          int bin = h_Eta_map->GetBinContent(h_Eta_map->FindBin(RecHitEtaEB));
-          
-          if( digiItr->id() != ebid )continue;
-          EcalDataFrame df = *digiItr;
-          
-          h_ped = new TH1D("","",500,0,500);
-          h_ADC = new TH1D("","",500,0,500);
-
-          for (int i=0; i < df.size(); i++ )
-            {
-              
-              h_ped -> Fill(df.sample(i).adc());
-
-              if(i > 2) continue;
-              
-            }
-          
-          for (int i=0; i < df.size(); i++ )
-               h_ADC -> Fill(df.sample(i).adc());
-              
-          float Amplitude = 0;
-
-          for (int i=0; i < df.size(); i++ )
-            {
-                h_Total_noise_FromRechit_EB -> Fill(df.sample(i).adc()-h_ADC_total->GetMean());
-                Total_noise_FromRechit_Eta_map[bin-1]->Fill(df.sample(i).adc()-h_ADC_total->GetMean());
-                if(i < 3) Total_noise_FromRechit_Eta_map_ped[bin-1]->Fill(df.sample(i).adc()-h_ADC_total_ped->GetMean());
-
-                h_HF_noise_FromRechit_EB ->Fill(df.sample(i).adc()-h_ADC->GetMean());
-                HF_noise_FromRechit_Eta_map[bin-1]->Fill(df.sample(i).adc()-h_ADC->GetMean());
-                if(i < 3) HF_noise_FromRechit_Eta_map_ped[bin-1]->Fill(df.sample(i).adc()-h_ped->GetMean());
-                  
-                Amplitude = Amplitude + df.sample(i).adc()*weights_EB[i];
-            }
-      
-           h_LF_noise_FromRechit_EB -> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
-           LF_noise_FromRechit_Eta_map[bin-1]-> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
-           LF_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_ped->GetMean());
-   
-           h_digisFromRechit_EB_ped_mean ->Fill(h_ped->GetMean());
-           h_digisFromRechit_EB_ped_rms ->Fill(h_ped->GetRMS());
-           
-           Amplitude_FromRechit_Eta[bin-1]->Fill(Amplitude);
-           Amplitude_FromRechit_iphieta[ebid.iphi()-1][ebid.ieta()+86]->Fill(Amplitude);
-           
-           delete h_ped;
-           delete h_ADC;
-           
-        }
-      
-    } */ 
-    
-  delete h_ADC_total; 
-  delete h_ADC_total_ped; 
-  
-  //h_recHits_EB_size           -> Fill( recHitsEB->size() );
-  //if (!hasSpike) h_recHits_EB_size_cleaned -> Fill( recHitsEB->size() );
-  
-  //h_recHits_EB_energyMax         -> Fill( maxRecHitEnergyEB );
-  //h_recHits_EB_energyMax_cleaned -> Fill( maxRecHitEnergyEBcleaned );
-
-  h_ADC_total = new TH1D("","",500,0,500);
-  
-  for(EBDigiCollection::const_iterator digiItr = theEcalBarrelDigis->begin();
-          digiItr != theEcalBarrelDigis->end();
-          ++digiItr)
-      {
-
-          EcalDataFrame df = *digiItr;
-          
-          for (int i=0; i < df.size(); i++ )
-               h_ADC_total -> Fill(df.sample(i).adc());
-           
-      }
-  
-  for(EBDigiCollection::const_iterator digiItr = theEcalBarrelDigis->begin();
-          digiItr != theEcalBarrelDigis->end();
-          ++digiItr)
-      {
-          
-          EBDetId ebid(digiItr->id());
-          h_digis_EB_occupancy -> Fill( ebid.iphi() , ebid.ieta() );
-          
-          GlobalPoint mycell = geometry -> getPosition(DetId(digiItr->id()));
-          float digiEtaEB = mycell.eta();
-          
-          int bin = h_Eta_map->GetBinContent(h_Eta_map->FindBin(digiEtaEB));
-          
-          EcalDataFrame df = *digiItr;
-          
-          h_ped = new TH1D("","",500,0,500);
-          h_ADC = new TH1D("","",500,0,500);
-
-          for (int i=0; i < df.size(); i++ )
-            {
-              
-              h_ped -> Fill(df.sample(i).adc());
-
-              if(i > 2) continue;
-              
-            }
-          
-          for (int i=0; i < df.size(); i++ )
-               h_ADC -> Fill(df.sample(i).adc());
-          
-          float Amplitude = 0;
-          
-          for (int i=0; i < df.size(); i++ )
-            {
-                Amplitude = Amplitude + df.sample(i).adc()*weights_EB[i];
-
-                h_Total_noise_EB -> Fill(df.sample(i).adc()-h_ADC_total->GetMean());
-                Total_noise_Eta_map[bin-1]->Fill(df.sample(i).adc()-h_ADC_total->GetMean());
-                Total_noise_iphieta[ebid.iphi()-1][ebid.ieta()+86] -> Fill(df.sample(i).adc()-h_ADC_total->GetMean());
-                Total_noise_ieta[ebid.ieta()+86]->Fill(df.sample(i).adc()-h_ADC_total->GetMean());
-                if(i < 3) Total_noise_Eta_map_ped[bin-1]->Fill(df.sample(i).adc()-h_ADC_total_ped->GetMean());
-                
-
-                h_HF_noise_EB ->Fill(df.sample(i).adc()-h_ADC->GetMean());
-                HF_noise_Eta_map[bin-1]->Fill(df.sample(i).adc()-h_ADC->GetMean());
-                HF_noise_iphieta[ebid.iphi()-1][ebid.ieta()+86] -> Fill(df.sample(i).adc()-h_ADC->GetMean());
-                HF_noise_ieta[ebid.ieta()+86]->Fill(df.sample(i).adc()-h_ADC->GetMean());
-                if(i < 3) HF_noise_Eta_map_ped[bin-1]->Fill(df.sample(i).adc()-h_ped->GetMean());
-            }
-      
-           h_LF_noise_EB -> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
-           LF_noise_Eta_map[bin-1]-> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
-           LF_noise_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_ped->GetMean());
-           LF_noise_iphieta[ebid.iphi()-1][ebid.ieta()+86]-> Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
-           LF_noise_ieta[ebid.ieta()+86]->Fill(h_ADC->GetMean()-h_ADC_total->GetMean());
-   
-           h_digis_EB_ped_mean ->Fill(h_ped->GetMean());
-           h_digis_EB_ped_rms ->Fill(h_ped->GetRMS());
-
-           Amplitude_Eta[bin-1]->Fill(Amplitude);
-           Amplitude_iphieta[ebid.iphi()-1][ebid.ieta()+86]->Fill(Amplitude);
-           
-           delete h_ped;
-           delete h_ADC;
-      } 
-  
-  delete h_ADC_total;
-  
-  // ... endcap
-  /*edm::Handle<EcalRecHitCollection> recHitsEE;
-  ev.getByLabel( recHitCollection_EE_, recHitsEE );
-  const EcalRecHitCollection* theEndcapEcalRecHits = recHitsEE.product () ;
-  if ( ! recHitsEE.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> recHitsEE not found" << std::endl; 
-  }*/
-  
-  //... digis endcap
-  edm::Handle<EEDigiCollection> eeDigis;
-  ev.getByLabel (eeDigiCollection_, eeDigis) ;
-  const EEDigiCollection* theEcalEndcapDigis = eeDigis.product () ;  
-  if (! (eeDigis.isValid ()) ) {
-    std::cerr << "EcalValidation::analyze -->  eeDigis not found" << std::endl; 
-  }
-  
- // int nHitsEEP = 0;
- // int nHitsEEM = 0;
-
- /* float maxRecHitEnergyEEP        = -999.;
-  float maxRecHitEnergyEEM        = -999.;
-  float maxRecHitEtaEEP           = -999.;
-  float maxRecHitEtaEEM           = -999.; 
-  float maxRecHitPhiEEP           = -999.;
-  float maxRecHitPhiEEM           = -999.;
-  float maxRecHitEnergyEEP_cut6   = -999.;
-  float maxRecHitEnergyEEM_cut6   = -999.;
-  float maxRecHitEtaEEP_cut6      = -999.;
-  float maxRecHitEtaEEM_cut6      = -999.; 
-  float maxRecHitPhiEEP_cut6      = -999.;
-  float maxRecHitPhiEEM_cut6      = -999.;
-  float maxRecHitEnergyEEP_cut5_5 = -999.;
-  float maxRecHitEnergyEEM_cut5_5 = -999.;
-  float maxRecHitEtaEEP_cut5_5    = -999.;
-  float maxRecHitEtaEEM_cut5_5    = -999.; 
-  float maxRecHitPhiEEP_cut5_5    = -999.;
-  float maxRecHitPhiEEM_cut5_5    = -999.;
-  float maxRecHitEnergyEEP_cut5   = -999.;
-  float maxRecHitEnergyEEM_cut5   = -999.;
-  float maxRecHitEtaEEP_cut5      = -999.;
-  float maxRecHitEtaEEM_cut5      = -999.; 
-  float maxRecHitPhiEEP_cut5      = -999.;
-  float maxRecHitPhiEEM_cut5      = -999.;
-  float maxRecHitEnergyEEP_cut4_5 = -999.;
-  float maxRecHitEnergyEEM_cut4_5 = -999.;
-  float maxRecHitEtaEEP_cut4_5    = -999.;
-  float maxRecHitEtaEEM_cut4_5    = -999.; 
-  float maxRecHitPhiEEP_cut4_5    = -999.;
-  float maxRecHitPhiEEM_cut4_5    = -999.;
-  float maxRecHitEnergyEEP_cut4   = -999.;
-  float maxRecHitEnergyEEM_cut4   = -999.;
-  float maxRecHitEtaEEP_cut4      = -999.;
-  float maxRecHitEtaEEM_cut4      = -999.; 
-  float maxRecHitPhiEEP_cut4      = -999.;
-  float maxRecHitPhiEEM_cut4      = -999.;
-  float maxRecHitEnergyEEP_cut3_5 = -999.;
-  float maxRecHitEnergyEEM_cut3_5 = -999.;
-  float maxRecHitEtaEEP_cut3_5    = -999.;
-  float maxRecHitEtaEEM_cut3_5    = -999.; 
-  float maxRecHitPhiEEP_cut3_5    = -999.;
-  float maxRecHitPhiEEM_cut3_5    = -999.;
-  float maxRecHitEnergyEEP_cut3   = -999.;
-  float maxRecHitEnergyEEM_cut3   = -999.;
-  float maxRecHitEtaEEP_cut3      = -999.;
-  float maxRecHitEtaEEM_cut3      = -999.; 
-  float maxRecHitPhiEEP_cut3      = -999.;
-  float maxRecHitPhiEEM_cut3      = -999.;
-
-  float maxEtRecHitEnergyEEP = -999.;
-  float maxEtRecHitEnergyEEM = -999.;
-  float maxEtRecHitEtaEEP    = -999.;
-  float maxEtRecHitEtaEEM    = -999.; 
-  float maxEtRecHitPhiEEP    = -999.;
-  float maxEtRecHitPhiEEM    = -999.;
-  
-  float RecHitEtaEE          = -999.;*/
-
-  EEDetId eeid_MrecHitEEM;
-  EEDetId eeid_MrecHitEEP;
-
-  TH1D* h_ADC_total_EEP = new TH1D("","",500,0,500);
-  TH1D* h_ADC_total_EEM = new TH1D("","",500,0,500);
-  TH1D* h_ADC_total_EEP_ped = new TH1D("","",500,0,500);
-  TH1D* h_ADC_total_EEM_ped = new TH1D("","",500,0,500);
-  TH1D* h_ADC_P = new TH1D("","",500,0,500);
-  TH1D* h_ADC_M = new TH1D("","",500,0,500);
-     
-  /*for ( EcalRecHitCollection::const_iterator itr = theEndcapEcalRecHits->begin () ;
-	itr != theEndcapEcalRecHits->end () ; ++itr)
-    {
-      
-      EEDetId eeid( itr -> id() );
-      GlobalPoint mycell = geometry->getPosition(itr->detid());
-      
-      EcalPedestalsMap::const_iterator itped = pedestals->getMap().find( eeid );
-      float width = (*itped).rms(gain);
-      
-      //if(width > 3) std::cout << "EE RMS-event: " << width << " - " << eeid.ix()-0.5 << " - " << eeid.iy()-0.5 << " - " <<  naiveId_ << " - " << gain << std::endl;
-  
-      
-      if ( eeid.zside() > 0 ){
-           if(h_DB_noiseMap_EEP->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEP->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-      	   if(h_DB_noiseMap_EEP_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.) h_DB_noiseMap_EEP_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEP_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEP_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEP_cut5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.) h_DB_noiseMap_EEP_cut5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEP_cut4_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 4.5) h_DB_noiseMap_EEP_cut4_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEP_cut4->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 4.) h_DB_noiseMap_EEP_cut4->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEP_cut3_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.5) h_DB_noiseMap_EEP_cut3_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEP_cut3->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.) h_DB_noiseMap_EEP_cut3->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-      }
-      
-      if ( eeid.zside() < 0 ){
-           if(h_DB_noiseMap_EEM->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEM->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-      	   if(h_DB_noiseMap_EEM_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.) h_DB_noiseMap_EEM_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEM_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEM_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEM_cut5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.) h_DB_noiseMap_EEM_cut5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEM_cut4_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 4.5) h_DB_noiseMap_EEM_cut4_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEM_cut4->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 4.) h_DB_noiseMap_EEM_cut4->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEM_cut3_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.5) h_DB_noiseMap_EEM_cut3_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-           if(h_DB_noiseMap_EEM_cut3->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 3.) h_DB_noiseMap_EEM_cut3->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
-      }
-
-      float seedLaserCorrection = theLaser->getLaserCorrection(eeid, ev.time());
-      if(h_DB_LaserCorrMap_EEP->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 && eeid.zside() > 0) h_DB_LaserCorrMap_EEP->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,seedLaserCorrection);
-      if(h_DB_LaserCorrMap_EEM->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 && eeid.zside() < 0) h_DB_LaserCorrMap_EEM->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,seedLaserCorrection);
-      
-      double et = itr -> energy()*mycell.perp()/mycell.mag();  
-       
-      if ( eeid.zside() > 0 ){
-           sumRecHitEtEEP[naiveId_-1] += et;
-           if(fabs(mycell.eta()) < 2.5) sumRecHitEtCutEEP[naiveId_-1] += et;
-      }
-      if ( eeid.zside() < 0 ){
-           sumRecHitEtEEM[naiveId_-1] += et;
-           if(fabs(mycell.eta()) < 2.5) sumRecHitEtCutEEM[naiveId_-1] += et;
-      }
-
-      RecHitEtaEE = mycell.eta(); 
-
-      // EE+
-      if ( eeid.zside() > 0 ){
-
-	nHitsEEP++;
-	h_recHits_EEP_energy        -> Fill( itr -> energy() );
-        h_recHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
-        h_recHits_recoFlag          -> Fill( itr -> recoFlag() );
-
-	// max E rec hit
-	if (itr -> energy() > maxRecHitEnergyEEP && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) ) {
-	  maxRecHitEnergyEEP = itr -> energy() ;
-	  maxRecHitEtaEEP    = mycell.eta() ;
-	  maxRecHitPhiEEP    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut6 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 6.) {
-	  maxRecHitEnergyEEP_cut6 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut6    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut6    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut5_5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 5.5) {
-	  maxRecHitEnergyEEP_cut5_5 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut5_5    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut5_5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 5.) {
-	  maxRecHitEnergyEEP_cut5 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut5    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut4_5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 4.5) {
-	  maxRecHitEnergyEEP_cut4_5 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut4_5    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut4_5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut4 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 4.) {
-	  maxRecHitEnergyEEP_cut4 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut4    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut4    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut3_5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 3.5) {
-	  maxRecHitEnergyEEP_cut3_5 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut3_5    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut3_5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEP_cut3 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 3.) {
-	  maxRecHitEnergyEEP_cut3 = itr -> energy() ;
-	  maxRecHitEtaEEP_cut3    = mycell.eta() ;
-	  maxRecHitPhiEEP_cut3    = mycell.phi() ;
-	}
-
-	// max Et rec hit
-	if (et > maxEtRecHitEnergyEEP && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) ) {
-	  maxEtRecHitEnergyEEP = et ;
-	  maxEtRecHitEtaEEP    = mycell.eta() ;
-	  maxEtRecHitPhiEEP    = mycell.phi() ;
-	  eeid_MrecHitEEP      = eeid ;
+			 Amplitude_Eta[bin-1]->Fill(Amplitude);
+			 Amplitude_iphieta[ebid.iphi()-1][ebid.ieta()+86]->Fill(Amplitude);
+			 
+			 delete h_ped;
+			 delete h_ADC;
+		} 
+	
+	delete h_ADC_total;
+    delete h_ADC_total_ped;
+	
+	//... digis endcap
+	edm::Handle<EEDigiCollection> eeDigis;
+	ev.getByToken(eeDigiCollection_, eeDigis) ;
+	const EEDigiCollection* theEcalEndcapDigis = eeDigis.product () ;  
+	if (! (eeDigis.isValid ()) ) {
+	  std::cerr << "EcalValidationRelVal_rechitless::analyze -->  eeDigis not found" << std::endl; 
 	}
 	
-	// only channels above noise
-	if (  itr -> energy() > ethrEE_ ){
-	  h_recHits_EEP_time          -> Fill( itr -> time() );
-	  h_recHits_EEP_Chi2          -> Fill( itr -> chi2() );
-	  h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
-	  h_recHits_EEP_occupancy     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
-	  h_recHits_EEP_deviation     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
-	  h_recHits_EEP_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
-	  h_recHits_EEP_iYoccupancy   -> Fill( eeid.iy() - 0.5 );
-	}
-      }
-      
-      // EE-
-      if ( eeid.zside() < 0 ){
+	EEDetId eeid_MrecHitEEM;
+	EEDetId eeid_MrecHitEEP;
+
+	TH1D* h_ADC_total_EEP = new TH1D("","",500,0,500);
+	TH1D* h_ADC_total_EEM = new TH1D("","",500,0,500);
+	TH1D* h_ADC_total_EEP_ped = new TH1D("","",500,0,500);
+	TH1D* h_ADC_total_EEM_ped = new TH1D("","",500,0,500);
+	TH1D* h_ADC_P = new TH1D("","",500,0,500);
+	TH1D* h_ADC_M = new TH1D("","",500,0,500);
+	 
+	delete h_ADC_total_EEP_ped;
+	delete h_ADC_total_EEM_ped;
 	
-	nHitsEEM++;
-	h_recHits_EEM_energy        -> Fill( itr -> energy() );
-        h_recHits_EE_recoFlag       -> Fill( itr -> recoFlag() );
-        h_recHits_recoFlag          -> Fill( itr -> recoFlag() );
+	for(EEDigiCollection::const_iterator digiItr = theEcalEndcapDigis->begin();
+			digiItr != theEcalEndcapDigis->end();
+			++digiItr)
+		{
+
+			EEDetId eeid(digiItr->id());
+			EcalDataFrame df = *digiItr;
+			 
+			if(eeid.zside()>0) h_digis_EEP_occupancy->Fill( eeid.ix() - 0.5, eeid.iy() - 0.5); 
+			if(eeid.zside()<0) h_digis_EEM_occupancy->Fill( eeid.ix() - 0.5 , eeid.iy() - 0.5); 
+			 
+			for(int i=0; i < df.size(); i++ )
+			  {
+				 if(eeid.zside()>0)
+					h_ADC_total_EEP -> Fill(df.sample(i).adc());
+				  
+				  if(eeid.zside()<0)
+					h_ADC_total_EEM -> Fill(df.sample(i).adc());
+			  }
+
+		}
+   
+	for(EEDigiCollection::const_iterator digiItr = theEcalEndcapDigis->begin();
+			digiItr != theEcalEndcapDigis->end();
+			++digiItr)
+		{
+
+			EEDetId eeid(digiItr->id());
+			GlobalPoint mycell = geometry -> getPosition(DetId(digiItr->id()));
+			float digiEtaEE = mycell.eta();
+			
+			int bin = h_Eta_map->GetBinContent(h_Eta_map->FindBin(digiEtaEE));
+			
+			EcalDataFrame df = *digiItr;
+			
+			h_ped = new TH1D("","",500,0,500);
+			h_ADC_P = new TH1D("","",500,0,500);
+			h_ADC_M = new TH1D("","",500,0,500);
+			
+			for (int i=0; i < df.size(); i++ )
+			  {
+				
+				h_ped -> Fill(df.sample(i).adc());
+
+				if(i > 2) continue;
+				
+			  }
+			
+			 if(eeid.zside() < 0)
+				for (int i=0; i < df.size(); i++ )
+					 h_ADC_M -> Fill(df.sample(i).adc());
+
+			 if(eeid.zside() > 0)
+				for (int i=0; i < df.size(); i++ )
+					 h_ADC_P -> Fill(df.sample(i).adc());
+				
+			 float Amplitude = 0; 
+			 
+			 for (int i=0; i < df.size(); i++ )
+			   {
+				  Amplitude = Amplitude + df.sample(i).adc()*weights_EE[i];
+				   
+				  if(eeid.zside() > 0)
+				   {     
+					  h_Total_noise_EEP -> Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
+						  Total_noise_Eta_map[bin-1] -> Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
+						  Total_noise_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
+						  if(i < 3) Total_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ADC_total_EEP_ped->GetMean());
+
+					  h_HF_noise_EEP ->Fill(df.sample(i).adc()-h_ADC_P->GetMean());                   
+						  HF_noise_Eta_map[bin-1] ->Fill(df.sample(i).adc()-h_ADC_P->GetMean());
+						  HF_noise_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_P->GetMean());
+						  if(i < 3) HF_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ped->GetMean());
+						 
+				   }
+				   
+				   if(eeid.zside() < 0)
+				   {
+					  h_Total_noise_EEM -> Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
+						  Total_noise_Eta_map[bin-1] -> Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
+						  Total_noise_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
+						  if(i < 3) Total_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ADC_total_EEM_ped->GetMean());
+
+					  h_HF_noise_EEM ->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
+						  HF_noise_Eta_map[bin-1] ->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
+						  HF_noise_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
+						  if(i < 3) HF_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ped->GetMean());
+				   }
+			   }
+			 
+			 if(eeid.zside() > 0)
+			  {
+				h_LF_noise_EEP -> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
+				LF_noise_Eta_map[bin-1] -> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
+				LF_noise_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]-> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
+				LF_noise_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_EEP_ped->GetMean());
+				
+				h_digis_EEP_ped_mean ->Fill(h_ped->GetMean());
+				h_digis_EEP_ped_rms ->Fill(h_ped->GetRMS());
+				 
+				Amplitude_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(Amplitude);
+			  }
+			 
+			 if(eeid.zside() < 0)
+			  {
+				h_LF_noise_EEM -> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
+				LF_noise_Eta_map[bin-1] -> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
+				LF_noise_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]-> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
+				LF_noise_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_EEM_ped->GetMean());
+
+				h_digis_EEM_ped_mean ->Fill(h_ped->GetMean());
+				h_digis_EEM_ped_rms ->Fill(h_ped->GetRMS());
+
+				Amplitude_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(Amplitude);
+			  }
+			 
+			 Amplitude_Eta[bin-1]->Fill(Amplitude);
+			  
+			 delete h_ped;
+			 delete h_ADC_P;
+			 delete h_ADC_M;
+			 
+		} 
 	
-	// max E rec hit
-	if (itr -> energy() > maxRecHitEnergyEEM && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) ) {
-	  maxRecHitEnergyEEM = itr -> energy() ;
-	  maxRecHitEtaEEM    = mycell.eta() ;
-	  maxRecHitPhiEEM    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut6 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 6.) {
-	  maxRecHitEnergyEEM_cut6 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut6    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut6    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut5_5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 5.5) {
-	  maxRecHitEnergyEEM_cut5_5 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut5_5    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut5_5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 5.) {
-	  maxRecHitEnergyEEM_cut5 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut5    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut4_5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 4.5) {
-	  maxRecHitEnergyEEM_cut4_5 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut4_5    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut4_5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut4 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 4.) {
-	  maxRecHitEnergyEEM_cut4 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut4    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut4    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut3_5 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 3.5) {
-	  maxRecHitEnergyEEM_cut3_5 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut3_5    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut3_5    = mycell.phi() ;
-	}
-        if (itr -> energy() > maxRecHitEnergyEEM_cut3 && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60) && width <= 3.) {
-	  maxRecHitEnergyEEM_cut3 = itr -> energy() ;
-	  maxRecHitEtaEEM_cut3    = mycell.eta() ;
-	  maxRecHitPhiEEM_cut3    = mycell.phi() ;
-	}
-	
-	// max Et rec hit
-	if (et > maxEtRecHitEnergyEEM && 
-	    !(eeid.ix()>=41 && eeid.ix()<=60 && eeid.iy()>=41 && eeid.iy()<=60)) {
-	  maxEtRecHitEnergyEEM = et ;
-	  maxEtRecHitEtaEEM    = mycell.eta() ;
-	  maxEtRecHitPhiEEM    = mycell.phi() ;
-	  eeid_MrecHitEEM      = eeid ;
-	}
-	
-	// only channels above noise
-	if (  itr -> energy() > ethrEE_ ) {
-	  h_recHits_EEM_time          -> Fill( itr -> time() );
-	  h_recHits_EEM_Chi2          -> Fill( itr -> chi2() );
-	  h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
-	  h_recHits_EEM_occupancy     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
-	  h_recHits_EEM_deviation     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
-	  h_recHits_EEM_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
-	  h_recHits_EEM_iYoccupancy   -> Fill( eeid.iy() - 0.5 );
+	delete h_ADC_total_EEM;
+	delete h_ADC_total_EEP;
 
-	}
-
-      }
-
-
-      //... digis endcap fron recHit
-   
-     for(EEDigiCollection::const_iterator digiItr = theEcalEndcapDigis->begin();
-          digiItr != theEcalEndcapDigis->end();
-          ++digiItr)
-        {
-          if( digiItr->id() != eeid ) continue;
-          EcalDataFrame df = *digiItr;
-          
-          for (int i=0; i < df.size(); i++ )
-            {
- 		if( eeid.zside() > 0 ) h_ADC_total_EEP->Fill(df.sample(i).adc()); 
-                if( eeid.zside() < 0 ) h_ADC_total_EEM->Fill(df.sample(i).adc());  
-            }
-           
-           for (int i=0; i < df.size(); i++ )
-            {
-                if(i > 2) continue;
- 		if( eeid.zside() > 0 ) h_ADC_total_EEP_ped->Fill(df.sample(i).adc()); 
-                if( eeid.zside() < 0 ) h_ADC_total_EEM_ped->Fill(df.sample(i).adc());  
-            }
-     
-        }
-
-     for(EEDigiCollection::const_iterator digiItr = theEcalEndcapDigis->begin();
-          digiItr != theEcalEndcapDigis->end();
-          ++digiItr)
-        {
-          if( digiItr->id() != eeid )continue;
-
-          EcalDataFrame df = *digiItr;
-          
-          h_ped = new TH1D("","",500,0,500);
-          h_ADC_P = new TH1D("","",500,0,500);
-          h_ADC_M = new TH1D("","",500,0,500);
-          
-          int bin = h_Eta_map->GetBinContent(h_Eta_map->FindBin(RecHitEtaEE));
-          
-          for (int i=0; i < df.size(); i++ )
-            {
-              
-              h_ped -> Fill(df.sample(i).adc());
-
-              if(i > 2) continue;
-              
-            }
-          
-           if(eeid.zside() < 0)
-              for (int i=0; i < df.size(); i++ )
-                   h_ADC_M -> Fill(df.sample(i).adc());
-
-           if(eeid.zside() > 0)
-              for (int i=0; i < df.size(); i++ )
-                   h_ADC_P -> Fill(df.sample(i).adc());
-
-           float Amplitude = 0;
-
-           for (int i=0; i < df.size(); i++ )
-             {
-                Amplitude = Amplitude + df.sample(i).adc()*weights_EE[i];
-                
-                if(eeid.zside() > 0)
-                 {
-                	h_Total_noise_FromRechit_EEP -> Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
-                        Total_noise_FromRechit_Eta_map[bin-1] -> Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
-                        if(i < 3) Total_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ADC_total_EEP_ped->GetMean());
-                        
-                	h_HF_noise_FromRechit_EEP ->Fill(df.sample(i).adc()-h_ADC_P->GetMean());                   
-                        HF_noise_FromRechit_Eta_map[bin-1] ->Fill(df.sample(i).adc()-h_ADC_P->GetMean());
-                        if(i < 3) HF_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ped->GetMean());
-                       
-                 }
-                 
-                 if(eeid.zside() < 0)
-                 {
-                	h_Total_noise_FromRechit_EEM -> Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
-                        Total_noise_FromRechit_Eta_map[bin-1] -> Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
-                        if(i < 3) Total_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ADC_total_EEM_ped->GetMean());
-                           
-                	h_HF_noise_FromRechit_EEM ->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
-                        HF_noise_FromRechit_Eta_map[bin-1] ->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
-                        if(i < 3) HF_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ped->GetMean());
-                 }
-             }
-           
-           if(eeid.zside() > 0)
-            {
-              h_LF_noise_FromRechit_EEP -> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
-              LF_noise_FromRechit_Eta_map[bin-1] -> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
-              LF_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_EEP_ped->GetMean());
-              
-              h_digisFromRechit_EEP_ped_mean ->Fill(h_ped->GetMean());
-              h_digisFromRechit_EEP_ped_rms ->Fill(h_ped->GetRMS());
-              
-              Amplitude_FromRechit_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(Amplitude);
-            }
-           
-           if(eeid.zside() < 0)
-            {
-              h_LF_noise_FromRechit_EEM -> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
-              LF_noise_FromRechit_Eta_map[bin-1] -> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
-              LF_noise_FromRechit_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_EEM_ped->GetMean());
-
-              h_digisFromRechit_EEM_ped_mean ->Fill(h_ped->GetMean());
-              h_digisFromRechit_EEM_ped_rms ->Fill(h_ped->GetRMS());
-             
-              Amplitude_FromRechit_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(Amplitude);
-            }
-            
-           Amplitude_FromRechit_Eta[bin-1]->Fill(Amplitude);
-          
-           delete h_ped;
-           delete h_ADC_M;
-           delete h_ADC_P;
-           
-        } 
-      
-    } // end loop over EE rec hits*/
-   
-  delete h_ADC_total_EEP;
-  delete h_ADC_total_EEM;
-  delete h_ADC_total_EEP_ped;
-  delete h_ADC_total_EEM_ped;
-
-  h_ADC_total_EEP = new TH1D("","",500,0,500);
-  h_ADC_total_EEM = new TH1D("","",500,0,500);
-  
-  for(EEDigiCollection::const_iterator digiItr = theEcalEndcapDigis->begin();
-          digiItr != theEcalEndcapDigis->end();
-          ++digiItr)
-      {
-
-          EEDetId eeid(digiItr->id());
-          EcalDataFrame df = *digiItr;
-           
-          if(eeid.zside()>0) h_digis_EEP_occupancy->Fill( eeid.ix() - 0.5, eeid.iy() - 0.5); 
-          if(eeid.zside()<0) h_digis_EEM_occupancy->Fill( eeid.ix() - 0.5 , eeid.iy() - 0.5); 
-           
-          for(int i=0; i < df.size(); i++ )
-            {
-               if(eeid.zside()>0)
-                  h_ADC_total_EEP -> Fill(df.sample(i).adc());
-                
-                if(eeid.zside()<0)
-                  h_ADC_total_EEM -> Fill(df.sample(i).adc());
-            }
-
-      }
- 
-  for(EEDigiCollection::const_iterator digiItr = theEcalEndcapDigis->begin();
-          digiItr != theEcalEndcapDigis->end();
-          ++digiItr)
-      {
-
-          EEDetId eeid(digiItr->id());
-          GlobalPoint mycell = geometry -> getPosition(DetId(digiItr->id()));
-          float digiEtaEE = mycell.eta();
-          
-          int bin = h_Eta_map->GetBinContent(h_Eta_map->FindBin(digiEtaEE));
-          
-          EcalDataFrame df = *digiItr;
-          
-          h_ped = new TH1D("","",500,0,500);
-          h_ADC_P = new TH1D("","",500,0,500);
-          h_ADC_M = new TH1D("","",500,0,500);
-          
-          for (int i=0; i < df.size(); i++ )
-            {
-              
-              h_ped -> Fill(df.sample(i).adc());
-
-              if(i > 2) continue;
-              
-            }
-          
-           if(eeid.zside() < 0)
-              for (int i=0; i < df.size(); i++ )
-                   h_ADC_M -> Fill(df.sample(i).adc());
-
-           if(eeid.zside() > 0)
-              for (int i=0; i < df.size(); i++ )
-                   h_ADC_P -> Fill(df.sample(i).adc());
-              
-           float Amplitude = 0; 
-           
-           for (int i=0; i < df.size(); i++ )
-             {
-                Amplitude = Amplitude + df.sample(i).adc()*weights_EE[i];
-                 
-                if(eeid.zside() > 0)
-                 {     
-                	h_Total_noise_EEP -> Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
-                        Total_noise_Eta_map[bin-1] -> Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
-                        Total_noise_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_total_EEP->GetMean());
-                        if(i < 3) Total_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ADC_total_EEP_ped->GetMean());
-
-                	h_HF_noise_EEP ->Fill(df.sample(i).adc()-h_ADC_P->GetMean());                   
-                        HF_noise_Eta_map[bin-1] ->Fill(df.sample(i).adc()-h_ADC_P->GetMean());
-                        HF_noise_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_P->GetMean());
-                        if(i < 3) HF_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ped->GetMean());
-                       
-                 }
-                 
-                 if(eeid.zside() < 0)
-                 {
-                	h_Total_noise_EEM -> Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
-                        Total_noise_Eta_map[bin-1] -> Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
-                        Total_noise_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_total_EEM->GetMean());
-                        if(i < 3) Total_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ADC_total_EEM_ped->GetMean());
-
-                	h_HF_noise_EEM ->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
-                        HF_noise_Eta_map[bin-1] ->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
-                        HF_noise_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(df.sample(i).adc()-h_ADC_M->GetMean());
-                        if(i < 3) HF_noise_Eta_map_ped[bin-1]-> Fill(df.sample(i).adc()-h_ped->GetMean());
-                 }
-             }
-           
-           if(eeid.zside() > 0)
-            {
-              h_LF_noise_EEP -> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
-              LF_noise_Eta_map[bin-1] -> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
-              LF_noise_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]-> Fill(h_ADC_P->GetMean()-h_ADC_total_EEP->GetMean());
-              LF_noise_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_EEP_ped->GetMean());
-              
-              h_digis_EEP_ped_mean ->Fill(h_ped->GetMean());
-              h_digis_EEP_ped_rms ->Fill(h_ped->GetRMS());
-               
-              Amplitude_ixiy_EEP[eeid.ix()-1][eeid.iy()-1]->Fill(Amplitude);
-            }
-           
-           if(eeid.zside() < 0)
-            {
-              h_LF_noise_EEM -> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
-              LF_noise_Eta_map[bin-1] -> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
-              LF_noise_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]-> Fill(h_ADC_M->GetMean()-h_ADC_total_EEM->GetMean());
-              LF_noise_Eta_map_ped[bin-1]-> Fill(h_ped->GetMean()-h_ADC_total_EEM_ped->GetMean());
-
-              h_digis_EEM_ped_mean ->Fill(h_ped->GetMean());
-              h_digis_EEM_ped_rms ->Fill(h_ped->GetRMS());
-
-              Amplitude_ixiy_EEM[eeid.ix()-1][eeid.iy()-1]->Fill(Amplitude);
-            }
-           
-           Amplitude_Eta[bin-1]->Fill(Amplitude);
-            
-           delete h_ped;
-           delete h_ADC_P;
-           delete h_ADC_M;
-           
-      } 
-  
-  delete h_ADC_total_EEM;
-  delete h_ADC_total_EEP;
-
-   
-  // size
-  /*h_recHits_EE_size    -> Fill( recHitsEE->size() );
-  h_recHits_EEP_size   -> Fill( nHitsEEP );
-  h_recHits_EEM_size   -> Fill( nHitsEEM );
-
-  // energy
-  h_recHits_EEP_energyMax -> Fill( maxRecHitEnergyEEP );
-  h_recHits_EEM_energyMax -> Fill( maxRecHitEnergyEEM );
-
-  
-  // eta/phi for max E rec hit
-
-  h_recHits_eta     -> Fill( maxRecHitEtaEB  );
-  h_recHits_eta     -> Fill( maxRecHitEtaEEP );
-  h_recHits_eta     -> Fill( maxRecHitEtaEEM );
-
-  if (maxRecHitIEtaEB>0)   h_recHits_EB_eta -> Fill((maxRecHitIEtaEB -0.5)*0.0175);
-  if (maxRecHitIEtaEB<0)   h_recHits_EB_eta -> Fill((maxRecHitIEtaEB +0.5)*0.0175);
-
-  h_recHits_EEP_eta -> Fill( maxRecHitEtaEEP );
-  h_recHits_EEM_eta -> Fill( maxRecHitEtaEEM );
-
-  h_recHits_EB_phi  -> Fill( maxRecHitPhiEB  );
-  h_recHits_EE_phi  -> Fill( maxRecHitPhiEEP );
-  h_recHits_EE_phi  -> Fill( maxRecHitPhiEEM );
-
-  h_recHits_EEP_phi -> Fill( maxRecHitPhiEEP );
-  h_recHits_EEM_phi -> Fill( maxRecHitPhiEEM );
-  
-  h_recHits_eta_cut6     -> Fill( maxRecHitEtaEB_cut6  );
-  h_recHits_eta_cut6     -> Fill( maxRecHitEtaEEP_cut6 );
-  h_recHits_eta_cut6     -> Fill( maxRecHitEtaEEM_cut6 );
-
-  if (maxRecHitIEtaEB_cut6>0)   h_recHits_EB_eta_cut6 -> Fill((maxRecHitIEtaEB_cut6 -0.5)*0.0175);
-  if (maxRecHitIEtaEB_cut6<0)   h_recHits_EB_eta_cut6 -> Fill((maxRecHitIEtaEB_cut6 +0.5)*0.0175);
-
-  h_recHits_EEP_eta_cut6 -> Fill( maxRecHitEtaEEP_cut6 );
-  h_recHits_EEM_eta_cut6 -> Fill( maxRecHitEtaEEM_cut6 );
-
-  h_recHits_EB_phi_cut6  -> Fill( maxRecHitPhiEB_cut6  );
-  h_recHits_EE_phi_cut6  -> Fill( maxRecHitPhiEEP_cut6 );
-  h_recHits_EE_phi_cut6  -> Fill( maxRecHitPhiEEM_cut6 );
-
-  h_recHits_EEP_phi_cut6 -> Fill( maxRecHitPhiEEP_cut6 );
-  h_recHits_EEM_phi_cut6 -> Fill( maxRecHitPhiEEM_cut6 );
-   
-  h_recHits_eta_cut5_5     -> Fill( maxRecHitEtaEB_cut5_5  );
-  h_recHits_eta_cut5_5     -> Fill( maxRecHitEtaEEP_cut5_5 );
-  h_recHits_eta_cut5_5     -> Fill( maxRecHitEtaEEM_cut5_5 );
-
-  if (maxRecHitIEtaEB_cut5_5>0)   h_recHits_EB_eta_cut5_5 -> Fill((maxRecHitIEtaEB_cut5_5 -0.5)*0.0175);
-  if (maxRecHitIEtaEB_cut5_5<0)   h_recHits_EB_eta_cut5_5 -> Fill((maxRecHitIEtaEB_cut5_5 +0.5)*0.0175);
-
-  h_recHits_EEP_eta_cut5_5 -> Fill( maxRecHitEtaEEP_cut5_5 );
-  h_recHits_EEM_eta_cut5_5 -> Fill( maxRecHitEtaEEM_cut5_5 );
-
-  h_recHits_EB_phi_cut5_5  -> Fill( maxRecHitPhiEB_cut5_5  );
-  h_recHits_EE_phi_cut5_5  -> Fill( maxRecHitPhiEEP_cut5_5 );
-  h_recHits_EE_phi_cut5_5  -> Fill( maxRecHitPhiEEM_cut5_5 );
-
-  h_recHits_EEP_phi_cut5_5 -> Fill( maxRecHitPhiEEP_cut5_5 );
-  h_recHits_EEM_phi_cut5_5 -> Fill( maxRecHitPhiEEM_cut5_5 );
-
-  h_recHits_eta_cut5     -> Fill( maxRecHitEtaEB_cut5  );
-  h_recHits_eta_cut5     -> Fill( maxRecHitEtaEEP_cut5 );
-  h_recHits_eta_cut5     -> Fill( maxRecHitEtaEEM_cut5 );
-
-  if (maxRecHitIEtaEB_cut5>0)   h_recHits_EB_eta_cut5 -> Fill((maxRecHitIEtaEB_cut5 -0.5)*0.0175);
-  if (maxRecHitIEtaEB_cut5<0)   h_recHits_EB_eta_cut5 -> Fill((maxRecHitIEtaEB_cut5 +0.5)*0.0175);
-
-  h_recHits_EEP_eta_cut5 -> Fill( maxRecHitEtaEEP_cut5 );
-  h_recHits_EEM_eta_cut5 -> Fill( maxRecHitEtaEEM_cut5 );
-
-  h_recHits_EB_phi_cut5  -> Fill( maxRecHitPhiEB_cut5  );
-  h_recHits_EE_phi_cut5  -> Fill( maxRecHitPhiEEP_cut5 );
-  h_recHits_EE_phi_cut5  -> Fill( maxRecHitPhiEEM_cut5 );
-
-  h_recHits_EEP_phi_cut5 -> Fill( maxRecHitPhiEEP_cut5 );
-  h_recHits_EEM_phi_cut5 -> Fill( maxRecHitPhiEEM_cut5 );
-
-  h_recHits_eta_cut4_5     -> Fill( maxRecHitEtaEB_cut4_5  );
-  h_recHits_eta_cut4_5     -> Fill( maxRecHitEtaEEP_cut4_5 );
-  h_recHits_eta_cut4_5     -> Fill( maxRecHitEtaEEM_cut4_5 );
-
-  if (maxRecHitIEtaEB_cut4_5>0)   h_recHits_EB_eta_cut4_5 -> Fill((maxRecHitIEtaEB_cut4_5 -0.4)*0.0174);
-  if (maxRecHitIEtaEB_cut4_5<0)   h_recHits_EB_eta_cut4_5 -> Fill((maxRecHitIEtaEB_cut4_5 +0.4)*0.0174);
-
-  h_recHits_EEP_eta_cut4_5 -> Fill( maxRecHitEtaEEP_cut4_5 );
-  h_recHits_EEM_eta_cut4_5 -> Fill( maxRecHitEtaEEM_cut4_5 );
-
-  h_recHits_EB_phi_cut4_5  -> Fill( maxRecHitPhiEB_cut4_5  );
-  h_recHits_EE_phi_cut4_5  -> Fill( maxRecHitPhiEEP_cut4_5 );
-  h_recHits_EE_phi_cut4_5  -> Fill( maxRecHitPhiEEM_cut4_5 );
-
-  h_recHits_EEP_phi_cut4_5 -> Fill( maxRecHitPhiEEP_cut4_5 );
-  h_recHits_EEM_phi_cut4_5 -> Fill( maxRecHitPhiEEM_cut4_5 );
-  
-  h_recHits_eta_cut4     -> Fill( maxRecHitEtaEB_cut4  );
-  h_recHits_eta_cut4     -> Fill( maxRecHitEtaEEP_cut4 );
-  h_recHits_eta_cut4     -> Fill( maxRecHitEtaEEM_cut4 );
-
-  if (maxRecHitIEtaEB_cut4>0)   h_recHits_EB_eta_cut4 -> Fill((maxRecHitIEtaEB_cut4 -0.4)*0.0174);
-  if (maxRecHitIEtaEB_cut4<0)   h_recHits_EB_eta_cut4 -> Fill((maxRecHitIEtaEB_cut4 +0.4)*0.0174);
-
-  h_recHits_EEP_eta_cut4 -> Fill( maxRecHitEtaEEP_cut4 );
-  h_recHits_EEM_eta_cut4 -> Fill( maxRecHitEtaEEM_cut4 );
-
-  h_recHits_EB_phi_cut4  -> Fill( maxRecHitPhiEB_cut4  );
-  h_recHits_EE_phi_cut4  -> Fill( maxRecHitPhiEEP_cut4 );
-  h_recHits_EE_phi_cut4  -> Fill( maxRecHitPhiEEM_cut4 );
-
-  h_recHits_EEP_phi_cut4 -> Fill( maxRecHitPhiEEP_cut4 );
-  h_recHits_EEM_phi_cut4 -> Fill( maxRecHitPhiEEM_cut4 );
-
-  h_recHits_eta_cut3_5     -> Fill( maxRecHitEtaEB_cut3_5  );
-  h_recHits_eta_cut3_5     -> Fill( maxRecHitEtaEEP_cut3_5 );
-  h_recHits_eta_cut3_5     -> Fill( maxRecHitEtaEEM_cut3_5 );
-
-  if (maxRecHitIEtaEB_cut3_5>0)   h_recHits_EB_eta_cut3_5 -> Fill((maxRecHitIEtaEB_cut3_5 -0.3)*0.0173);
-  if (maxRecHitIEtaEB_cut3_5<0)   h_recHits_EB_eta_cut3_5 -> Fill((maxRecHitIEtaEB_cut3_5 +0.3)*0.0173);
-
-  h_recHits_EEP_eta_cut3_5 -> Fill( maxRecHitEtaEEP_cut3_5 );
-  h_recHits_EEM_eta_cut3_5 -> Fill( maxRecHitEtaEEM_cut3_5 );
-
-  h_recHits_EB_phi_cut3_5  -> Fill( maxRecHitPhiEB_cut3_5  );
-  h_recHits_EE_phi_cut3_5  -> Fill( maxRecHitPhiEEP_cut3_5 );
-  h_recHits_EE_phi_cut3_5  -> Fill( maxRecHitPhiEEM_cut3_5 );
-
-  h_recHits_EEP_phi_cut3_5 -> Fill( maxRecHitPhiEEP_cut3_5 );
-  h_recHits_EEM_phi_cut3_5 -> Fill( maxRecHitPhiEEM_cut3_5 );
-
-  h_recHits_eta_cut3     -> Fill( maxRecHitEtaEB_cut3  );
-  h_recHits_eta_cut3     -> Fill( maxRecHitEtaEEP_cut3 );
-  h_recHits_eta_cut3     -> Fill( maxRecHitEtaEEM_cut3 );
-
-  if (maxRecHitIEtaEB_cut3>0)   h_recHits_EB_eta_cut3 -> Fill((maxRecHitIEtaEB_cut3 -0.3)*0.0173);
-  if (maxRecHitIEtaEB_cut3<0)   h_recHits_EB_eta_cut3 -> Fill((maxRecHitIEtaEB_cut3 +0.3)*0.0173);
-
-  h_recHits_EEP_eta_cut3 -> Fill( maxRecHitEtaEEP_cut3 );
-  h_recHits_EEM_eta_cut3 -> Fill( maxRecHitEtaEEM_cut3 );
-
-  h_recHits_EB_phi_cut3  -> Fill( maxRecHitPhiEB_cut3  );
-  h_recHits_EE_phi_cut3  -> Fill( maxRecHitPhiEEP_cut3 );
-  h_recHits_EE_phi_cut3  -> Fill( maxRecHitPhiEEM_cut3 );
-
-  h_recHits_EEP_phi_cut3 -> Fill( maxRecHitPhiEEP_cut3 );
-  h_recHits_EEM_phi_cut3 -> Fill( maxRecHitPhiEEM_cut3 );
-
-
-  
-  // histos for max Et rec hit
-  float noiseThr = 1.;
-  
-  if ( maxEtRecHitEnergyEB > noiseThr )  {
-    h_recHits_eta_MaxEt    -> Fill( maxEtRecHitEtaEB) ;
-    h_recHits_EB_phi_MaxEt -> Fill( maxEtRecHitPhiEB);
-  }
-  
-  
-  if ( maxEtRecHitEnergyEEP > noiseThr )  {
-    h_recHits_eta_MaxEt    -> Fill( maxEtRecHitEtaEEP ) ;
-    h_recHits_EE_phi_MaxEt -> Fill( maxEtRecHitPhiEEP );
-  }
-  
-  if ( maxEtRecHitEnergyEEM > noiseThr )  {
-    h_recHits_eta_MaxEt     -> Fill( maxEtRecHitEtaEEM ) ;
-    h_recHits_EE_phi_MaxEt  -> Fill( maxEtRecHitPhiEEM );
-  }*/
-
-  //--- BASIC CLUSTERS --------------------------------------------------------------
-
-  // ... barrel
-  /*edm::Handle<reco::BasicClusterCollection> basicClusters_EB_h;
-  ev.getByLabel( basicClusterCollection_EB_, basicClusters_EB_h );
-  const reco::BasicClusterCollection* theBarrelBasicClusters = basicClusters_EB_h.product () ;
-  if ( ! basicClusters_EB_h.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> basicClusters_EB_h not found" << std::endl; 
-  }
-  
-  
-
-  int nBCcleaned = 0;
-  int nBCcleanedTkmatched = 0;
-
-  for (reco::BasicClusterCollection::const_iterator itBC = theBarrelBasicClusters->begin(); 
-       itBC != theBarrelBasicClusters->end(); ++itBC ) {
-         
-    //Get the associated RecHits
-    const std::vector<std::pair<DetId,float> > & hits= itBC->hitsAndFractions();
-    for (std::vector<std::pair<DetId,float> > ::const_iterator rh = hits.begin(); rh!=hits.end(); ++rh){
-      
-      EBRecHitCollection::const_iterator itrechit = theBarrelEcalRecHits->find((*rh).first);
-      if (itrechit==theBarrelEcalRecHits->end()) continue;
-      h_basicClusters_recHits_EB_recoFlag -> Fill ( itrechit -> recoFlag() );
-      h_basicClusters_recHits_recoFlag    -> Fill ( itrechit -> recoFlag() );
-    
-    }
-
-    
-    h_basicClusters_EB_nXtals -> Fill( (*itBC).hitsAndFractions().size() );
-    h_basicClusters_EB_energy -> Fill( itBC->energy() );
-    h_basicClusters_eta       -> Fill( itBC->eta() );
-    h_basicClusters_EB_eta    -> Fill( itBC->eta() );
-    h_basicClusters_EB_phi    -> Fill( itBC->phi() );
-    
-    float E1 = EcalClusterTools::eMax   ( *itBC, theBarrelEcalRecHits);
-//     float E9 = EcalClusterTools::e3x3   ( *itBC, theBarrelEcalRecHits, topology );
-    float E4 = EcalClusterTools::eTop   ( *itBC, theBarrelEcalRecHits, topology )+
-               EcalClusterTools::eRight ( *itBC, theBarrelEcalRecHits, topology )+
-               EcalClusterTools::eBottom( *itBC, theBarrelEcalRecHits, topology )+
-               EcalClusterTools::eLeft  ( *itBC, theBarrelEcalRecHits, topology );
-    
-    if ( (1.-E4/E1) > 0.95 && E1 > 3.) continue;
-    
-    h_basicClusters_EB_nXtals_cleaned -> Fill( (*itBC).hitsAndFractions().size() );
-    h_basicClusters_EB_energy_cleaned -> Fill( itBC->energy() );
-    nBCcleaned++;
-    
-    ///Do the Track-cluster matching for the cleaned ones
-     
-    float theBestDr = 99999.;
-    for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
-    { 
-      ECALPositionCalculator posCalc;
-      const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
-      const math::XYZVector trackMom =  tkIt->momentum();
-
-      float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
-      float deltaphi=fabs( phi - itBC->phi() );
-      if(deltaphi>6.283185308) deltaphi -= 6.283185308;
-      if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
-
-      float eta= posCalc.ecalEta(trackMom,vertex);
-      float deltaeta=fabs( eta - itBC->eta() );
-      if(deltaeta>6.283185308) deltaeta -= 6.283185308;
-      if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
-
-      //compute dR squared
-      float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
-      if ( thisDr < theBestDr ) theBestDr = thisDr;
-    }
-
-    h_basicClusters_EB_dr_cleaned_tkmatched -> Fill ( theBestDr );
-    //Matching CL-Tk if the dr < 0.2
-    if ( theBestDr > 0.04 ) continue;
-
-    h_basicClusters_EB_nXtals_cleaned_tkmatched -> Fill( (*itBC).hitsAndFractions().size() );
-    h_basicClusters_EB_energy_cleaned_tkmatched -> Fill( itBC->energy() );
-    nBCcleanedTkmatched++;
-
-    h_basicClusters_EB_eta_tkmatched    -> Fill( itBC->eta() );
-    h_basicClusters_EB_phi_tkmatched    -> Fill( itBC->phi() );
-  }
-    
-
-  h_basicClusters_EB_size         -> Fill( basicClusters_EB_h->size() );
-  h_basicClusters_EB_size_cleaned -> Fill( nBCcleaned );
-  h_basicClusters_EB_size_cleaned_tkmatched -> Fill( nBCcleanedTkmatched ); 
-  
-  // ... endcap
-  edm::Handle<reco::BasicClusterCollection> basicClusters_EE_h;
-  ev.getByLabel( basicClusterCollection_EE_, basicClusters_EE_h );
-  if ( ! basicClusters_EE_h.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> basicClusters_EE_h not found" << std::endl; 
-  }
- 
-
-  int nBasicClustersEEP = 0;
-  int nBasicClustersEEM = 0;
-  int nBasicClustersEEPTkmatched = 0;
-  int nBasicClustersEEMTkmatched = 0;
-
-  for (unsigned int icl = 0; icl < basicClusters_EE_h->size(); ++icl) {
-    
-    //Get the associated RecHits
-    const std::vector<std::pair<DetId,float> > & hits= (*basicClusters_EE_h)[icl].hitsAndFractions();
-    for (std::vector<std::pair<DetId,float> > ::const_iterator rh = hits.begin(); rh!=hits.end(); ++rh){
-      
-      EBRecHitCollection::const_iterator itrechit = theEndcapEcalRecHits->find((*rh).first);
-      if (itrechit==theEndcapEcalRecHits->end()) continue;
-      h_basicClusters_recHits_EE_recoFlag -> Fill ( itrechit -> recoFlag() );
-      h_basicClusters_recHits_recoFlag    -> Fill ( itrechit -> recoFlag() );
-    }
-
-
-    h_basicClusters_eta       -> Fill( (*basicClusters_EE_h)[icl].eta() );
-    h_basicClusters_EE_eta    -> Fill( (*basicClusters_EE_h)[icl].eta() );
-    h_basicClusters_EE_phi    -> Fill( (*basicClusters_EE_h)[icl].phi() );
-    
-    if ((*basicClusters_EE_h)[icl].z() > 0){
-      h_basicClusters_EEP_nXtals -> Fill( (*basicClusters_EE_h)[icl].hitsAndFractions().size() );
-      h_basicClusters_EEP_energy -> Fill( (*basicClusters_EE_h)[icl].energy() );
-      nBasicClustersEEP++;
-
-      
-      float theBestDr = 99999.;
-      for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
-	{ 
-        ECALPositionCalculator posCalc;
-        const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
-        const math::XYZVector trackMom =  tkIt->momentum();
-  
-        float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
-        float deltaphi=fabs( phi - (*basicClusters_EE_h)[icl].phi() );
-        if(deltaphi>6.283185308) deltaphi -= 6.283185308;
-        if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
-  
-        float eta= posCalc.ecalEta(trackMom,vertex);
-        float deltaeta=fabs( eta - (*basicClusters_EE_h)[icl].eta() );
-        if(deltaeta>6.283185308) deltaeta -= 6.283185308;
-        if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
-  
-        //compute dR squared
-        float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
-        if ( thisDr < theBestDr ) theBestDr = thisDr;
-      }
-      h_basicClusters_EEP_dr_tkmatched     -> Fill( theBestDr );
-      //Matching CL-Tk if the dr < 0.2
-      if ( theBestDr > 0.04 ) continue;
-    
-      h_basicClusters_EEP_nXtals_tkmatched -> Fill( (*basicClusters_EE_h)[icl].hitsAndFractions().size() );
-      h_basicClusters_EEP_energy_tkmatched -> Fill( (*basicClusters_EE_h)[icl].energy() );
-      nBasicClustersEEPTkmatched++;
-    
-      h_basicClusters_eta_tkmatched       -> Fill(  (*basicClusters_EE_h)[icl].eta() );
-      h_basicClusters_EE_eta_tkmatched    -> Fill(  (*basicClusters_EE_h)[icl].eta() );
-      h_basicClusters_EE_phi_tkmatched    -> Fill(  (*basicClusters_EE_h)[icl].phi() );
-      
-    }
-    
-    if ((*basicClusters_EE_h)[icl].z() < 0){
-      h_basicClusters_EEM_nXtals -> Fill( (*basicClusters_EE_h)[icl].hitsAndFractions().size() );
-      h_basicClusters_EEM_energy -> Fill( (*basicClusters_EE_h)[icl].energy() );
-      nBasicClustersEEM++;
-      
-      float theBestDr = 99999.;
-      for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
-      { 
-        ECALPositionCalculator posCalc;
-        const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
-        const math::XYZVector trackMom =  tkIt->momentum();
-  
-        float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
-        float deltaphi=fabs( phi - (*basicClusters_EE_h)[icl].phi() );
-        if(deltaphi>6.283185308) deltaphi -= 6.283185308;
-        if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
-  
-        float eta= posCalc.ecalEta(trackMom,vertex);
-        float deltaeta=fabs( eta - (*basicClusters_EE_h)[icl].eta() );
-        if(deltaeta>6.283185308) deltaeta -= 6.283185308;
-        if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
-  
-        //compute dR squared
-        float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
-        if ( thisDr < theBestDr ) theBestDr = thisDr;
-      }
-      h_basicClusters_EEM_dr_tkmatched     -> Fill( theBestDr );
-      //Matching CL-Tk if the dr < 0.2
-      if ( theBestDr > 0.04 ) continue;
-    
-      h_basicClusters_EEM_nXtals_tkmatched -> Fill( (*basicClusters_EE_h)[icl].hitsAndFractions().size() );
-      h_basicClusters_EEM_energy_tkmatched -> Fill( (*basicClusters_EE_h)[icl].energy() );
-      nBasicClustersEEMTkmatched++;
-    
-      h_basicClusters_eta_tkmatched       -> Fill(  (*basicClusters_EE_h)[icl].eta() );
-      h_basicClusters_EE_eta_tkmatched    -> Fill(  (*basicClusters_EE_h)[icl].eta() );
-      h_basicClusters_EE_phi_tkmatched    -> Fill(  (*basicClusters_EE_h)[icl].phi() );
-      
-    }
-  }
-  
-  h_basicClusters_EEP_size->Fill( nBasicClustersEEP );
-  h_basicClusters_EEM_size->Fill( nBasicClustersEEM );
-  h_basicClusters_EEP_size_tkmatched->Fill( nBasicClustersEEPTkmatched );
-  h_basicClusters_EEM_size_tkmatched->Fill( nBasicClustersEEMTkmatched );
-
-  // Super Clusters
-  // ... barrel
-  edm::Handle<reco::SuperClusterCollection> superClusters_EB_h;
-  ev.getByLabel( superClusterCollection_EB_, superClusters_EB_h );
-  const reco::SuperClusterCollection* theBarrelSuperClusters = superClusters_EB_h.product () ;
-  if ( ! superClusters_EB_h.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> superClusters_EB_h not found" << std::endl; 
-  }
-
-
-  int nSCcleaned = 0;
-
-  for (reco::SuperClusterCollection::const_iterator itSC = theBarrelSuperClusters->begin(); 
-       itSC != theBarrelSuperClusters->end(); ++itSC ) {
-    
-    double scEt = itSC -> energy() * sin(2.*atan( exp(- itSC->position().eta() )));
-    double scRawEt = itSC -> rawEnergy() * sin(2.*atan( exp(- itSC->position().eta() )));
-    
-    if (scEt < scEtThrEB_ ) continue;
-
-    h_superClusters_EB_nXtals -> Fill( (*itSC).hitsAndFractions().size() );
-    h_superClusters_EB_nBC    -> Fill( itSC -> clustersSize());
-    h_superClusters_EB_energy -> Fill( itSC -> energy() );
-    h_superClusters_eta       -> Fill( itSC -> eta() );
-    h_superClusters_EB_eta    -> Fill( itSC -> eta() );
-    h_superClusters_EB_phi    -> Fill( itSC -> phi() );
- 
-    float E1 = EcalClusterTools::eMax   ( *itSC, theBarrelEcalRecHits);
-    float E4 = EcalClusterTools::eTop   ( *itSC, theBarrelEcalRecHits, topology )+
-               EcalClusterTools::eRight ( *itSC, theBarrelEcalRecHits, topology )+
-               EcalClusterTools::eBottom( *itSC, theBarrelEcalRecHits, topology )+
-               EcalClusterTools::eLeft  ( *itSC, theBarrelEcalRecHits, topology );
-
-    //Now get the seed:
-    DetId theSeedIdEB = EcalClusterTools::getMaximum( (*itSC).hitsAndFractions(), theBarrelEcalRecHits ).first;
-    EcalRecHitCollection::const_iterator theSeedEB = theBarrelEcalRecHits->find (theSeedIdEB) ;
-   
-    EcalPedestalsMap::const_iterator itped = pedestals->getMap().find( theSeedIdEB );
-    float width = (*itped).rms(gain);
-    
-    if(width <= 6){
-
-       h_superClusters_eta_cut6       -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut6    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut6    -> Fill( itSC -> phi() );
-    }
-    if(width <= 5.5){
-
-       h_superClusters_eta_cut5_5       -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut5_5    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut5_5    -> Fill( itSC -> phi() );
-    }
-    if(width <= 5){
-
-       h_superClusters_eta_cut5      -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut5    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut5    -> Fill( itSC -> phi() );
-    }
-    if(width <= 4.5){
-
-       h_superClusters_eta_cut4_5       -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut4_5    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut4_5    -> Fill( itSC -> phi() );
-    }
-    if(width <= 4){
-
-       h_superClusters_eta_cut4       -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut4    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut4    -> Fill( itSC -> phi() );
-    }
-    if(width <= 3.5){
-
-       h_superClusters_eta_cut3_5       -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut3_5    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut3_5    -> Fill( itSC -> phi() );
-    }
-    if(width <= 3){
-
-       h_superClusters_eta_cut3       -> Fill( itSC -> eta() );
-       h_superClusters_EB_eta_cut3    -> Fill( itSC -> eta() );
-       h_superClusters_EB_phi_cut3    -> Fill( itSC -> phi() );
-    }
-    
-    if ( E1 > 3. ) h_superClusters_EB_E1oE4  -> Fill( 1.- E4/E1);
-    
-    //Fill plots for SCL seed
-    h2_superClusters_EB_seedTimeVsEnergy -> Fill ( theSeedEB->energy(), theSeedEB->time() );
-
-    if ( (1.- E4/E1) > 0.95  && E1 > 3. ) continue;
-    
-    h_superClusters_EB_nXtals_cleaned -> Fill( (*itSC).hitsAndFractions().size() );
-    h_superClusters_EB_nBC_cleaned    -> Fill( itSC -> clustersSize());
-    h_superClusters_EB_energy_cleaned -> Fill( itSC -> energy() );
-    h_superClusters_EB_rawEnergy_cleaned -> Fill( itSC -> rawEnergy() );
-    h_superClusters_EB_rawEt_cleaned -> Fill( scRawEt );
-
-    nSCcleaned++;
-
-  }
-
-  h_superClusters_EB_size         -> Fill( superClusters_EB_h->size() );
-  h_superClusters_EB_size_cleaned -> Fill( nSCcleaned );
-
- 
-  
-  // ... endcap
-  edm::Handle<reco::SuperClusterCollection> superClusters_EE_h;
-  ev.getByLabel( superClusterCollection_EE_, superClusters_EE_h );
-  const reco::SuperClusterCollection* theEndcapSuperClusters = superClusters_EE_h.product () ;
-  if ( ! superClusters_EE_h.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> superClusters_EE_h not found" << std::endl; 
-  }
-
-  int nSuperClustersEEP = 0;
-  int nSuperClustersEEM = 0;
-
-  for (reco::SuperClusterCollection::const_iterator itSC = theEndcapSuperClusters->begin(); 
-       itSC != theEndcapSuperClusters->end(); ++itSC ) {
-
-    double scEt = itSC -> energy() * sin(2.*atan( exp(- itSC->position().eta() )));
-    double scRawEt = itSC -> rawEnergy() * sin(2.*atan( exp(- itSC->position().eta() )));
-
-    //Now get the seed:
-    DetId theSeedIdEE = EcalClusterTools::getMaximum( (*itSC).hitsAndFractions(), theEndcapEcalRecHits ).first;
-    EcalRecHitCollection::const_iterator theSeedEE = theEndcapEcalRecHits->find (theSeedIdEE) ;
-    
-    EcalPedestalsMap::const_iterator itped = pedestals->getMap().find( theSeedIdEE );
-    float width = (*itped).rms(gain);
-
-    if (scEt < scEtThrEE_ ) continue;
-
-    h_superClusters_eta       -> Fill( itSC -> eta() );
-    h_superClusters_EE_eta    -> Fill( itSC -> eta() );
-    h_superClusters_EE_phi    -> Fill( itSC -> phi() );
-    
-    if(width <= 6){
-       
-       h_superClusters_eta_cut6       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut6    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut6    -> Fill( itSC -> phi() );
-
-    }
-    if(width <= 5.5){
-       
-       h_superClusters_eta_cut5_5       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut5_5    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut5_5    -> Fill( itSC -> phi() );
-
-    }
-    if(width <= 5){
-       
-       h_superClusters_eta_cut5       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut5    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut5    -> Fill( itSC -> phi() );
-
-    }
-    if(width <= 4.5){
-       
-       h_superClusters_eta_cut4_5       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut4_5    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut4_5    -> Fill( itSC -> phi() );
-
-    }
-    if(width <= 4){
-       
-       h_superClusters_eta_cut4       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut4    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut4    -> Fill( itSC -> phi() );
-
-    }
-    if(width <= 3.5){
-       
-       h_superClusters_eta_cut3_5       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut3_5    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut3_5    -> Fill( itSC -> phi() );
-
-    }
-    if(width <= 3){
-       
-       h_superClusters_eta_cut3       -> Fill( itSC -> eta() );
-       h_superClusters_EE_eta_cut3    -> Fill( itSC -> eta() );
-       h_superClusters_EE_phi_cut3    -> Fill( itSC -> phi() );
-
-    }
-
-    float E1 = EcalClusterTools::eMax( *itSC, theEndcapEcalRecHits);
-    float E4 = EcalClusterTools::eTop( *itSC, theEndcapEcalRecHits, topology)+
-               EcalClusterTools::eRight( *itSC, theEndcapEcalRecHits, topology)+
-               EcalClusterTools::eBottom( *itSC, theEndcapEcalRecHits, topology)+
-               EcalClusterTools::eLeft( *itSC, theEndcapEcalRecHits, topology);
-    
-    //Fill plots for SCL seed
-    h2_superClusters_EE_seedTimeVsEnergy -> Fill ( theSeedEE->energy(), theSeedEE->time() );
-
-
-    if  ( itSC -> z() > 0 ){
-      h_superClusters_EEP_nXtals -> Fill( (*itSC).hitsAndFractions().size() );
-      h_superClusters_EEP_nBC    -> Fill( itSC -> clustersSize() );      
-      h_superClusters_EEP_energy -> Fill( itSC -> energy() );
-      h_superClusters_EEP_rawEnergy -> Fill( itSC -> rawEnergy() );
-      h_superClusters_EEP_rawEt -> Fill( scRawEt );
-      if ( E1 > 3. ) h_superClusters_EEP_E1oE4  -> Fill( 1.- E4/E1);
-      nSuperClustersEEP++;
-    }
-
-    if  ( itSC -> z() < 0 ){
-      h_superClusters_EEM_nXtals -> Fill( (*itSC).hitsAndFractions().size() );
-      h_superClusters_EEM_nBC    -> Fill( itSC -> clustersSize() );      
-      h_superClusters_EEM_energy -> Fill( itSC -> energy() );
-      h_superClusters_EEM_rawEnergy -> Fill( itSC -> rawEnergy() );
-      h_superClusters_EEM_rawEt -> Fill( scRawEt );
-      if ( E1 > 3. ) h_superClusters_EEM_E1oE4  -> Fill( 1.- E4/E1);
-      nSuperClustersEEM++;
-    }
-  }
-  
-  h_superClusters_EEP_size->Fill( nSuperClustersEEP );
-  h_superClusters_EEM_size->Fill( nSuperClustersEEM );*/
-
-  //--------------------------------------------------------
- 
-  //Preshower RecHits
-  /*edm::Handle<ESRecHitCollection> recHitsES;
-  ev.getByLabel (esRecHitCollection_, recHitsES) ;
-  const ESRecHitCollection* thePreShowerRecHits = recHitsES.product () ;
-
-  if ( ! recHitsES.isValid() ) {
-    std::cerr << "EcalValidation::analyze --> recHitsES not found" << std::endl; 
-  }
-
-  h_recHits_ES_size -> Fill( recHitsES->size());
-
-  float maxRecHitEnergyES = -999.;
-
-  int nF[2]={0,0};
-  int nR[2]={0,0};
-
-  for (ESRecHitCollection::const_iterator esItr = thePreShowerRecHits->begin(); esItr != thePreShowerRecHits->end(); ++esItr) 
-    {
-      
-      h_recHits_ES_energy -> Fill(esItr->energy()); 
-      h_recHits_ES_time   -> Fill(esItr->time()); 
-      if (esItr -> energy() > maxRecHitEnergyES ) maxRecHitEnergyES = esItr -> energy() ;
-
-      ESDetId id = ESDetId(esItr->id());
-      // front plane : id.plane()==1
-      if ( id.plane()==1 && id.zside() > 0 ){
-	h_recHits_ES_energy_F[0]-> Fill( esItr->energy() );
-	h_recHits_ES_time_F[0]  -> Fill( esItr->time() ); 
-	nF[0]++;
-      }
-      if ( id.plane()==1 && id.zside() < 0 ){
-	h_recHits_ES_energy_F[1]-> Fill( esItr->energy() );
-	h_recHits_ES_time_F[1]  -> Fill( esItr->time() );
-	nF[1]++;      
-      }
-      // rear plane : id.plane()==2
-      if ( id.plane()==2 && id.zside() > 0 ){
-	h_recHits_ES_energy_R[0]-> Fill( esItr->energy() );
-	h_recHits_ES_time_R[0]  -> Fill( esItr->time() );
-	nR[0]++;
-      }
-      if ( id.plane()==2 && id.zside() < 0 ){
-	h_recHits_ES_energy_R[1]->Fill( esItr->energy() );
-	h_recHits_ES_time_R[1]  -> Fill( esItr->time() );
-	nR[1]++;
-      }      
-    } // end loop over ES rec Hits
-
-  h_recHits_ES_energyMax -> Fill(maxRecHitEnergyES ); 
-  h_recHits_ES_size_F[0] -> Fill( nF[0] );
-  h_recHits_ES_size_F[1] -> Fill( nF[1] );
-  h_recHits_ES_size_R[0] -> Fill( nR[0] );
-  h_recHits_ES_size_R[1] -> Fill( nR[1] );
-
-
-  // ES clusters in X plane
-  Handle<PreshowerClusterCollection> esClustersX;
-  ev.getByLabel( esClusterCollectionX_, esClustersX);
-  const PreshowerClusterCollection *ESclustersX = esClustersX.product();
-
-  // ES clusters in Y plane
-  Handle<PreshowerClusterCollection> esClustersY;
-  ev.getByLabel( esClusterCollectionY_, esClustersY);
-  const PreshowerClusterCollection *ESclustersY = esClustersY.product(); 
-
-  // Do the ES-BasicCluster matching 
-  for (unsigned int icl = 0; icl < basicClusters_EE_h->size(); ++icl) {
-
-    const CaloCluster ecalBasicCluster = (*basicClusters_EE_h)[icl];
-
-    bool isMatchedESx = false;
-    bool isMatchedESy = false;
-    for (PreshowerClusterCollection::const_iterator iESClus = ESclustersX->begin(); iESClus != ESclustersX->end(); 
-	   ++iESClus) {
-      const CaloClusterPtr preshBasicCluster = iESClus->basicCluster();
-      if (*preshBasicCluster == ecalBasicCluster) isMatchedESx = true;
-    }
-
-    for (PreshowerClusterCollection::const_iterator iESClus = ESclustersY->begin(); iESClus != ESclustersY->end(); 
-	   ++iESClus) {
-      const CaloClusterPtr preshBasicCluster = iESClus->basicCluster();
-      if (*preshBasicCluster == ecalBasicCluster) isMatchedESy = true;
-    }
-
-    //Fot the matching require at least a matching with 1 ES plane
-    if ( !isMatchedESx && !isMatchedESy ) continue;
-
-    if ((*basicClusters_EE_h)[icl].z() > 0){
-
-      h_basicClusters_EEP_occupancy_esmatched -> Fill (  ecalBasicCluster.eta(),ecalBasicCluster.phi() );
-      h_basicClusters_EEP_eta_esmatched -> Fill (  ecalBasicCluster.eta() );
-      h_basicClusters_EEP_phi_esmatched -> Fill (  ecalBasicCluster.phi() );
-
-    }
-
-    if ((*basicClusters_EE_h)[icl].z() < 0){
-
-      h_basicClusters_EEM_occupancy_esmatched -> Fill (  ecalBasicCluster.eta(),ecalBasicCluster.phi() );
-      h_basicClusters_EEM_eta_esmatched -> Fill (  ecalBasicCluster.eta() );
-      h_basicClusters_EEM_phi_esmatched -> Fill (  ecalBasicCluster.phi() );
-
-    }
-
-
-  }
-
-  
-  // loop over all super clusters
-  for (reco::SuperClusterCollection::const_iterator itSC = theEndcapSuperClusters->begin(); 
-       itSC != theEndcapSuperClusters->end(); ++itSC ) {
-    
-    if ( fabs(itSC->eta()) < 1.65 || fabs(itSC->eta()) > 2.6 ) continue;
-
-    // Loop over all ECAL Basic clusters in the supercluster
-    for (CaloCluster_iterator ecalBasicCluster = itSC->clustersBegin(); ecalBasicCluster!= itSC->clustersEnd(); 
-	 ecalBasicCluster++) {
-      const CaloClusterPtr ecalBasicClusterPtr = *(ecalBasicCluster);
-      
-      float ESenergyPlane1 = -999.;
-      float ESenergyPlane2 = -999.;
-      
-      for (PreshowerClusterCollection::const_iterator iESClus = ESclustersX->begin(); iESClus != ESclustersX->end(); 
-	   ++iESClus) {
-        const CaloClusterPtr preshBasicCluster = iESClus->basicCluster();
-        const PreshowerCluster *esCluster = &*iESClus;
-        if (preshBasicCluster == ecalBasicClusterPtr) {
-	  ESenergyPlane1 = esCluster->energy();
-	  h_esClusters_energy_plane1 ->Fill(esCluster->energy());
-	}
-      }  // end of x loop
-      
-      for (PreshowerClusterCollection::const_iterator iESClus = ESclustersY->begin(); iESClus != ESclustersY->end(); 
-	   ++iESClus) {
-        const CaloClusterPtr preshBasicCluster = iESClus->basicCluster();
-        const PreshowerCluster *esCluster = &*iESClus;
-        if (preshBasicCluster == ecalBasicClusterPtr) {
-	  ESenergyPlane2 = esCluster->energy();
-	  h_esClusters_energy_plane2 -> Fill(esCluster->energy());
-	}
-      } // end of y loop
-      
-      if ( ESenergyPlane1 != -999. && ESenergyPlane2 != -999. ) 
-	h_esClusters_energy_ratio -> Fill(ESenergyPlane1/ESenergyPlane2);
-      
-      
-    } // end loop over all basic clusters in the supercluster
-  }// end loop over superclusters*/
-
-
-  // ---------- Do histos for pi0 peak
-
-  //doPi0Barrel(geometry, topology, recHitsEB);
-  //doPi0Endcap(geometry, topology, recHitsEE);
-
-  /// Get Jets and draw EMF maps
-  /*edm::Handle<reco::CaloJetCollection> JetHandle ;
-  ev.getByLabel (jets_,JetHandle);
-
-  for(unsigned int i=0; i<JetHandle->size(); ++i) 
-  { 
-    
-    
-    // ... Barrel
-    if ( (*JetHandle)[i].p4().eta() < 1.4442 ){
-
-      h_Jets_EB_emf        -> Fill ( (*JetHandle)[i].p4().eta(), (*JetHandle)[i].p4().phi(), (*JetHandle)[i].emEnergyFraction() );  
-      h_Jets_EB_emf_eta    -> Fill ( (*JetHandle)[i].p4().eta(), (*JetHandle)[i].emEnergyFraction() );
-      h_Jets_EB_emf_phi    -> Fill ( (*JetHandle)[i].p4().phi(), (*JetHandle)[i].emEnergyFraction() );
-
-    }
-  
-    // ... Endcaps
-    if ( (*JetHandle)[i].p4().eta() > 1.566 ){
-
-      h_Jets_EEP_emf        -> Fill ( (*JetHandle)[i].p4().eta(), (*JetHandle)[i].p4().phi(), (*JetHandle)[i].emEnergyFraction() );        
-      h_Jets_EEP_emf_eta    -> Fill ( (*JetHandle)[i].p4().eta(), (*JetHandle)[i].emEnergyFraction() );
-      h_Jets_EEP_emf_phi    -> Fill ( (*JetHandle)[i].p4().phi(), (*JetHandle)[i].emEnergyFraction() );
-
-    }
-
-    if ( (*JetHandle)[i].p4().eta() < -1.566 ){
-
-      h_Jets_EEM_emf        -> Fill ( (*JetHandle)[i].p4().eta(), (*JetHandle)[i].p4().phi(), (*JetHandle)[i].emEnergyFraction() );        
-      h_Jets_EEM_emf_eta    -> Fill ( (*JetHandle)[i].p4().eta(), (*JetHandle)[i].emEnergyFraction() );
-      h_Jets_EEM_emf_phi    -> Fill ( (*JetHandle)[i].p4().phi(), (*JetHandle)[i].emEnergyFraction() );
-
-    }
-    
-  }// loop on jets*/
-  
-  }
-
+	}// loop on jets
 }
 
 
@@ -2595,13 +1049,13 @@ EcalValidationRelVal_rechitless::endJob() {
         h_Total_noise_FromRechit_vs_Eta -> SetBinContent(ii,Total_noise_FromRechit_Eta_map[ii-1]->GetRMS()); 
         h_HF_noise_FromRechit_vs_Eta_ped -> SetBinContent(ii,HF_noise_FromRechit_Eta_map_ped[ii-1]->GetRMS());
         h_LF_noise_FromRechit_vs_Eta_ped -> SetBinContent(ii,LF_noise_FromRechit_Eta_map_ped[ii-1]->GetRMS());
-        h_Total_noise_FromRechit_vs_Eta_ped -> SetBinContent(ii,Total_noise_FromRechit_Eta_map_ped[ii-1]->GetRMS()); 
-        h_HF_noise_vs_Eta_ped -> SetBinContent(ii,HF_noise_Eta_map_ped[ii-1]->GetRMS());
-        h_LF_noise_vs_Eta_ped -> SetBinContent(ii,LF_noise_Eta_map_ped[ii-1]->GetRMS());
-        h_Total_noise_vs_Eta_ped -> SetBinContent(ii,Total_noise_Eta_map_ped[ii-1]->GetRMS());  
+        h_Total_noise_FromRechit_vs_Eta_ped -> SetBinContent(ii,Total_noise_FromRechit_Eta_map_ped[ii-1]->GetRMS());  
         h_HF_noise_vs_Eta -> SetBinContent(ii,HF_noise_Eta_map[ii-1]->GetRMS());
         h_LF_noise_vs_Eta -> SetBinContent(ii,LF_noise_Eta_map[ii-1]->GetRMS());
         h_Total_noise_vs_Eta -> SetBinContent(ii,Total_noise_Eta_map[ii-1]->GetRMS()); 
+        h_HF_noise_vs_Eta_ped -> SetBinContent(ii,HF_noise_Eta_map_ped[ii-1]->GetRMS());
+        h_LF_noise_vs_Eta_ped -> SetBinContent(ii,LF_noise_Eta_map_ped[ii-1]->GetRMS());
+        h_Total_noise_vs_Eta_ped -> SetBinContent(ii,Total_noise_Eta_map_ped[ii-1]->GetRMS());  
         
         h_Amplitude_vs_Eta -> SetBinContent(ii,Amplitude_Eta[ii-1]->GetRMS());
         h_Amplitude_FromRechit_vs_Eta -> SetBinContent(ii,Amplitude_FromRechit_Eta[ii-1]->GetRMS());

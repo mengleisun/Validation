@@ -1,53 +1,44 @@
 import FWCore.ParameterSet.Config as cms
 
-ecalvalidationSamplesMC = cms.EDAnalyzer("EcalValidation_Samples",
+hltHighLevel = cms.EDFilter("HLTHighLevel",
+    TriggerResultsTag = cms.InputTag("hltTriggerSummaryAOD","","HLT"),
+    HLTPaths = cms.vstring(),           # provide list of HLT paths (or patterns) you want
+    eventSetupPathsKey = cms.string(''), # not empty => use read paths from AlCaRecoTriggerBitsRcd via this key
+    andOr = cms.bool(True),             # how to deal with multiple triggers: True (OR) accept if ANY is true, False (AND) accept if ALL are true
+    throw = cms.bool(True)    # throw exception on unknown path names
+)
+
+ecalvalidation = cms.EDAnalyzer("EcalValidationAOD",
+    PVTag                     = cms.InputTag("offlinePrimaryVerticesWithBS"),
     #superClusterCollection_EB = cms.InputTag("correctedHybridSuperClusters"),
     superClusterCollection_EB = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALBarrel"),
     #superClusterCollection_EE = cms.InputTag("correctedMulti5x5SuperClustersWithPreshower"),
     superClusterCollection_EE = cms.InputTag("particleFlowSuperClusterECAL","particleFlowSuperClusterECALEndcapWithPreshower"),
     #basicClusterCollection_EE = cms.InputTag("multi5x5SuperClusters","multi5x5EndcapBasicClusters"),
     basicClusterCollection_EE = cms.InputTag("particleFlowSuperClusterECAL","particleFlowBasicClusterECALEndcap"),
-    recHitCollection_EE       = cms.InputTag("ecalRecHit","EcalRecHitsEE"),
-    recHitCollection_EB       = cms.InputTag("ecalRecHit","EcalRecHitsEB"),
-    recHitCollection_ES       = cms.InputTag("ecalPreshowerRecHit","EcalRecHitsES"),
-    redRecHitCollection_EE    = cms.InputTag("reducedEcalRecHitsEE"),
-    redRecHitCollection_EB    = cms.InputTag("reducedEcalRecHitsEB"),
-    redRecHitCollection_ES    = cms.InputTag("reducedEcalRecHitsES"),
+    #recHitCollection_EE       = cms.InputTag("ecalRecHit","EcalRecHitsEE"),
+    #recHitCollection_EB       = cms.InputTag("ecalRecHit","EcalRecHitsEB"),
+    recHitCollection_EE    = cms.InputTag("reducedEcalRecHitsEE"),
+    recHitCollection_EB    = cms.InputTag("reducedEcalRecHitsEB"),
     #basicClusterCollection_EB = cms.InputTag("hybridSuperClusters","hybridBarrelBasicClusters"),
     basicClusterCollection_EB = cms.InputTag("particleFlowSuperClusterECAL","particleFlowBasicClusterECALBarrel"),
+    #recHitCollection_ES       = cms.InputTag("ecalPreshowerRecHit","EcalRecHitsES"),
     ClusterCollectionX_ES     = cms.InputTag("multi5x5SuperClustersWithPreshower","preshowerXClusters"),
     ClusterCollectionY_ES     = cms.InputTag("multi5x5SuperClustersWithPreshower","preshowerYClusters"),
-    ebDigiCollection          = cms.InputTag("simEcalUnsuppressedDigis",""),
-    eeDigiCollection          = cms.InputTag("simEcalUnsuppressedDigis",""),
-    esDigiCollection          = cms.InputTag("simEcalUnsuppressedDigis",""),
-    #esDigiCollection          = cms.InputTag("ecalPreshowerDigis"),
-
-#ebDigiCollection = cms.InputTag("simEcalUnsuppressedDigis","m10BXPuDigis"),
-#eeDigiCollection = cms.InputTag("simEcalUnsuppressedDigis","m10BXPuDigis"),
-#esDigiCollection = cms.InputTag("simEcalUnsuppressedDigis","m10BXPuDigis"),
-    #ebDigiCollection          = cms.InputTag("selectDigi","selectedEcalEBDigiCollection"),
-    #eeDigiCollection          = cms.InputTag("selectDigi","selectedEcalEEDigiCollection"),
-    #esDigiCollection          = cms.InputTag("ecalPreshowerDigis"),
-    #ebDigiCollection          = cms.InputTag("simEcalDigis","ebDigis"),
-    #eeDigiCollection          = cms.InputTag("simEcalDigis","eeDigis"),
-    #ebEcalDigiCollection      = cms.InputTag("ecalDigis"),
-    #eeEcalDigiCollection      = cms.InputTag("ecalDigis"),
-      
-    SaveSrFlag                = cms.untracked.bool(True),
     
     tracks                    = cms.InputTag("generalTracks"),
     beamSpot                  = cms.InputTag("offlineBeamSpot"),
-    jets                      = cms.InputTag("ak5CaloJets"),
+    jets                      = cms.InputTag("ak4CaloJets"),
 
                                     
     #ethrEB = cms.double(0.8),
     #ethrEE = cms.double(1.2),
     ethrEB = cms.double(0.0),
     ethrEE = cms.double(0.0),
-    gainId = cms.double(1.0),
+    gainId = cms.double(3.0),
 
-    scEtThrEB = cms.double(0.0),
-    scEtThrEE = cms.double(0.0),
+    scEtThrEB = cms.double(4.0),
+    scEtThrEE = cms.double(4.0),
     
     # for pi0
 

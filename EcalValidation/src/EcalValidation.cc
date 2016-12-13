@@ -33,14 +33,6 @@
 #include "DataFormats/EcalDetId/interface/EBDetId.h"
 #include "DataFormats/EcalDetId/interface/EEDetId.h"
 #include "DataFormats/EcalDetId/interface/ESDetId.h"
-#include "DataFormats/EcalDigi/interface/EcalDigiCollections.h"
-#include "DataFormats/EcalRecHit/interface/EcalRecHitCollections.h"
-#include "DataFormats/EgammaReco/interface/SuperCluster.h"
-#include "DataFormats/EgammaReco/interface/SuperClusterFwd.h"
-#include "DataFormats/EgammaReco/interface/BasicCluster.h"
-#include "DataFormats/EgammaReco/interface/BasicClusterFwd.h"
-#include "DataFormats/EgammaReco/interface/PreshowerCluster.h"
-#include "DataFormats/EgammaReco/interface/PreshowerClusterFwd.h"
 #include "RecoEcal/EgammaCoreTools/interface/EcalClusterTools.h"
 #include "RecoEcal/EgammaCoreTools/interface/EcalTools.h"
 #include "RecoLocalCalo/EcalRecAlgos/interface/EcalSeverityLevelAlgo.h"
@@ -49,18 +41,12 @@
 #include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbService.h"
 #include "CalibCalorimetry/EcalLaserCorrection/interface/EcalLaserDbRecord.h"
 
-#include "DataFormats/TrackReco/interface/Track.h"
-#include "DataFormats/TrackReco/interface/TrackFwd.h"
-
 #include "RecoEgamma/EgammaTools/interface/ECALPositionCalculator.h"
 
-#include "DataFormats/JetReco/interface/CaloJet.h"
-#include "DataFormats/JetReco/interface/CaloJetCollection.h"
 #include "CondFormats/EcalObjects/interface/EcalPedestals.h"
 #include "CondFormats/DataRecord/interface/EcalPedestalsRcd.h"
 
 #include "Validation/EcalValidation/interface/EcalValidation.h"
-#include "DataFormats/BeamSpot/interface/BeamSpot.h"
 #include "MagneticField/Records/interface/IdealMagneticFieldRecord.h"
 #include "MagneticField/Engine/interface/MagneticField.h"
 
@@ -82,25 +68,25 @@ using namespace reco;
 EcalValidation::EcalValidation(const edm::ParameterSet& ps)
 {
   //now do what ever initialization is needed
-  recHitCollection_EB_       = ps.getParameter<edm::InputTag>("recHitCollection_EB");
-  recHitCollection_EE_       = ps.getParameter<edm::InputTag>("recHitCollection_EE");
-  redRecHitCollection_EB_    = ps.getParameter<edm::InputTag>("redRecHitCollection_EB");
-  redRecHitCollection_EE_    = ps.getParameter<edm::InputTag>("redRecHitCollection_EE");
-  basicClusterCollection_EB_ = ps.getParameter<edm::InputTag>("basicClusterCollection_EB");
-  basicClusterCollection_EE_ = ps.getParameter<edm::InputTag>("basicClusterCollection_EE");
-  superClusterCollection_EB_ = ps.getParameter<edm::InputTag>("superClusterCollection_EB");
-  superClusterCollection_EE_ = ps.getParameter<edm::InputTag>("superClusterCollection_EE");
-  esRecHitCollection_        = ps.getParameter<edm::InputTag>("recHitCollection_ES");
-  esClusterCollectionX_      = ps.getParameter<edm::InputTag>("ClusterCollectionX_ES");
-  esClusterCollectionY_      = ps.getParameter<edm::InputTag>("ClusterCollectionY_ES");
-  ebDigiCollection_          = ps.getParameter<edm::InputTag>("ebDigiCollection");
-  eeDigiCollection_          = ps.getParameter<edm::InputTag>("eeDigiCollection");
-  //ebEcalDigiCollection_      = ps.getParameter<edm::InputTag>("ebEcalDigiCollection");
-  //eeEcalDigiCollection_      = ps.getParameter<edm::InputTag>("eeEcalDigiCollection");
+  recHitCollection_EB_       = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_EB"));
+  recHitCollection_EE_       = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_EE"));
+  redRecHitCollection_EB_    = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("redRecHitCollection_EB"));
+  redRecHitCollection_EE_    = consumes<EcalRecHitCollection>(ps.getParameter<edm::InputTag>("redRecHitCollection_EE"));
+  basicClusterCollection_EB_ = consumes<reco::BasicClusterCollection>(ps.getParameter<edm::InputTag>("basicClusterCollection_EB"));
+  basicClusterCollection_EE_ = consumes<reco::BasicClusterCollection>(ps.getParameter<edm::InputTag>("basicClusterCollection_EE"));
+  superClusterCollection_EB_ = consumes<reco::SuperClusterCollection>(ps.getParameter<edm::InputTag>("superClusterCollection_EB"));
+  superClusterCollection_EE_ = consumes<reco::SuperClusterCollection>(ps.getParameter<edm::InputTag>("superClusterCollection_EE"));
+  esRecHitCollection_        = consumes<ESRecHitCollection>(ps.getParameter<edm::InputTag>("recHitCollection_ES"));
+  esClusterCollectionX_      = consumes<reco::PreshowerClusterCollection>(ps.getParameter<edm::InputTag>("ClusterCollectionX_ES"));
+  esClusterCollectionY_      = consumes<reco::PreshowerClusterCollection>(ps.getParameter<edm::InputTag>("ClusterCollectionY_ES"));
+  ebDigiCollection_          = consumes<EBDigiCollection>(ps.getParameter<edm::InputTag>("ebDigiCollection"));
+  eeDigiCollection_          = consumes<EEDigiCollection>(ps.getParameter<edm::InputTag>("eeDigiCollection"));
+  ebSrFlagCollection_        = consumes<EBSrFlagCollection>(ps.getParameter<edm::InputTag>("EBSrFlagCollection"));
+  eeSrFlagCollection_        = consumes<EESrFlagCollection>(ps.getParameter<edm::InputTag>("EESrFlagCollection"));
 
-  tracks_                    = ps.getParameter<edm::InputTag>("tracks");
-  beamSpot_                  = ps.getParameter<edm::InputTag>("beamSpot");
-  jets_                      = ps.getParameter<edm::InputTag>("jets");
+  tracks_                    = consumes<edm::View<reco::Track> >(ps.getParameter<edm::InputTag>("tracks"));
+  beamSpot_                  = consumes<reco::BeamSpot>         (ps.getParameter<edm::InputTag>("beamSpot"));
+  jets_                      = consumes<reco::CaloJetCollection>(ps.getParameter<edm::InputTag>("jets"));
 
   SaveSrFlag_                = ps.getUntrackedParameter<bool>("isMonEBpi0",true);
    
@@ -775,11 +761,11 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   //Get the BS position
   edm::Handle<reco::BeamSpot> recoBeamSpotHandle;
-  ev.getByLabel(beamSpot_,recoBeamSpotHandle);
+  ev.getByToken(beamSpot_,recoBeamSpotHandle);
   const reco::BeamSpot::Point& BSPosition = recoBeamSpotHandle->position(); 
   //Get tracks
   edm::Handle<edm::View<reco::Track> > TracksHandle ;
-  ev.getByLabel (tracks_, TracksHandle) ;
+  ev.getByToken(tracks_, TracksHandle) ;
   //Get the magnetic field
   edm::ESHandle<MagneticField> theMagField;
   iSetup.get<IdealMagneticFieldRecord>().get(theMagField);
@@ -801,7 +787,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   if(SaveSrFlag_)
   {
-     ev.getByLabel(ebEcalDigiCollection_, SRFlagsEB );
+     ev.getByToken(ebSrFlagCollection_, SRFlagsEB );
   
      for(EBSrFlagCollection::const_iterator it = SRFlagsEB->begin(); it != SRFlagsEB->end(); ++it)
        {
@@ -817,7 +803,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   if(SaveSrFlag_)
   {
-     ev.getByLabel(eeEcalDigiCollection_, SRFlagsEE );
+     ev.getByToken(eeSrFlagCollection_, SRFlagsEE );
   
      for(EESrFlagCollection::const_iterator it = SRFlagsEE->begin(); it != SRFlagsEE->end(); ++it)
        {
@@ -842,7 +828,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   // --- REDUCED REC HITS ------------------------------------------------------------------------------------- 
   edm::Handle<EcalRecHitCollection> redRecHitsEB;
-  ev.getByLabel( redRecHitCollection_EB_, redRecHitsEB );
+  ev.getByToken( redRecHitCollection_EB_, redRecHitsEB );
   const EcalRecHitCollection* theBarrelEcalredRecHits = redRecHitsEB.product () ;
   if ( ! redRecHitsEB.isValid() ) {
     std::cerr << "EcalValidation::analyze --> redRecHitsEB not found" << std::endl; 
@@ -859,7 +845,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   // ... endcap
   edm::Handle<EcalRecHitCollection> redRecHitsEE;
-  ev.getByLabel( redRecHitCollection_EE_, redRecHitsEE );
+  ev.getByToken( redRecHitCollection_EE_, redRecHitsEE );
   const EcalRecHitCollection* theEndcapEcalredRecHits = redRecHitsEE.product () ;
   if ( ! redRecHitsEE.isValid() ) {
     std::cerr << "EcalValidation::analyze --> redRecHitsEE not found" << std::endl; 
@@ -879,7 +865,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   // ... barrel
   edm::Handle<EcalRecHitCollection> recHitsEB;
-  ev.getByLabel( recHitCollection_EB_, recHitsEB );
+  ev.getByToken( recHitCollection_EB_, recHitsEB );
   const EcalRecHitCollection* theBarrelEcalRecHits = recHitsEB.product () ;
   if ( ! recHitsEB.isValid() ) {
     std::cerr << "EcalValidation::analyze --> recHitsEB not found" << std::endl; 
@@ -887,7 +873,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   // ... digis barrel
   edm::Handle<EBDigiCollection> ebDigis;
-  ev.getByLabel (ebDigiCollection_, ebDigis) ;
+  ev.getByToken(ebDigiCollection_, ebDigis) ;
   const EBDigiCollection* theEcalBarrelDigis = ebDigis.product () ;  
   if (! (ebDigis.isValid ()) ) {
     std::cerr << "EcalValidation::analyze -->  ebDigis not found" << std::endl; 
@@ -959,10 +945,14 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   int gain = int(gainId_);
 
+  int nGoodRecHitEB(0);
   for ( EcalRecHitCollection::const_iterator itr = theBarrelEcalRecHits->begin () ;
 	itr != theBarrelEcalRecHits->end () ;++itr)
     {
       
+      if(itr -> recoFlag() != EcalRecHit::Flags::kGood && itr -> recoFlag() != EcalRecHit::Flags::kOutOfTime)continue;   
+      if(itr -> energy() > ethrEB_)nGoodRecHitEB +=1;  
+
       EBDetId ebid( itr -> id() );
       GlobalPoint mycell = geometry -> getPosition(DetId(itr->id()));
       double et = itr -> energy()*mycell.perp()/mycell.mag();   
@@ -1053,7 +1043,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       if ( itr -> energy() > ethrEB_ ){
 	h_recHits_EB_time          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2          -> Fill( itr -> chi2() );
-	//	h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	//h_recHits_EB_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	h_recHits_EB_occupancy     -> Fill( ebid.iphi() , ebid.ieta() );
 	h_recHits_EB_deviation     -> Fill( ebid.iphi() , ebid.ieta() );
 	h_recHits_EB_iPhiOccupancy -> Fill( ebid.iphi() );
@@ -1077,7 +1067,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       if ( itr -> energy() > ethrEB_ ){
 	h_recHits_EB_time_cleaned          -> Fill( itr -> time() );
 	h_recHits_EB_Chi2_cleaned          -> Fill( itr -> chi2() );
-	//	h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
+	//h_recHits_EB_OutOfTimeChi2_cleaned -> Fill( itr -> outOfTimeChi2() );
       }
 
       // max E rec hit - cleaned
@@ -1163,8 +1153,8 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   delete h_ADC_total; 
   delete h_ADC_total_ped; 
   
-  h_recHits_EB_size           -> Fill( recHitsEB->size() );
-  if (!hasSpike) h_recHits_EB_size_cleaned -> Fill( recHitsEB->size() );
+  h_recHits_EB_size           -> Fill( nGoodRecHitEB );
+  if (!hasSpike) h_recHits_EB_size_cleaned -> Fill( nGoodRecHitEB );
   
   h_recHits_EB_energyMax         -> Fill( maxRecHitEnergyEB );
   h_recHits_EB_energyMax_cleaned -> Fill( maxRecHitEnergyEBcleaned );
@@ -1253,7 +1243,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   // ... endcap
   edm::Handle<EcalRecHitCollection> recHitsEE;
-  ev.getByLabel( recHitCollection_EE_, recHitsEE );
+  ev.getByToken( recHitCollection_EE_, recHitsEE );
   const EcalRecHitCollection* theEndcapEcalRecHits = recHitsEE.product () ;
   if ( ! recHitsEE.isValid() ) {
     std::cerr << "EcalValidation::analyze --> recHitsEE not found" << std::endl; 
@@ -1261,7 +1251,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   //... digis endcap
   edm::Handle<EEDigiCollection> eeDigis;
-  ev.getByLabel (eeDigiCollection_, eeDigis) ;
+  ev.getByToken(eeDigiCollection_, eeDigis) ;
   const EEDigiCollection* theEcalEndcapDigis = eeDigis.product () ;  
   if (! (eeDigis.isValid ()) ) {
     std::cerr << "EcalValidation::analyze -->  eeDigis not found" << std::endl; 
@@ -1337,11 +1327,14 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   TH1D* h_ADC_total_EEM_ped = new TH1D("","",500,0,500);
   TH1D* h_ADC_P = new TH1D("","",500,0,500);
   TH1D* h_ADC_M = new TH1D("","",500,0,500);
-     
+  
+  int nGoodRecHitEEp(0);
+  int nGoodRecHitEEm(0);   
   for ( EcalRecHitCollection::const_iterator itr = theEndcapEcalRecHits->begin () ;
 	itr != theEndcapEcalRecHits->end () ; ++itr)
     {
-      
+     
+      if(itr -> recoFlag() != EcalRecHit::Flags::kGood && itr -> recoFlag() != EcalRecHit::Flags::kOutOfTime)continue; 
       EEDetId eeid( itr -> id() );
       GlobalPoint mycell = geometry->getPosition(itr->detid());
       
@@ -1352,6 +1345,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
       
       if ( eeid.zside() > 0 ){
+           if(itr -> recoFlag() == EcalRecHit::Flags::kGood && itr -> energy() > ethrEE_)nGoodRecHitEEp +=1 ;
            if(h_DB_noiseMap_EEP->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEP->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
       	   if(h_DB_noiseMap_EEP_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.) h_DB_noiseMap_EEP_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEP_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEP_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
@@ -1363,6 +1357,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       }
       
       if ( eeid.zside() < 0 ){
+           if(itr -> recoFlag() == EcalRecHit::Flags::kGood  && itr -> energy() > ethrEE_)nGoodRecHitEEm +=1;
            if(h_DB_noiseMap_EEM->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0) h_DB_noiseMap_EEM->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
       	   if(h_DB_noiseMap_EEM_cut6->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 6.) h_DB_noiseMap_EEM_cut6->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
            if(h_DB_noiseMap_EEM_cut5_5->GetBinContent(eeid.ix()-0.5,eeid.iy()-0.5) == 0 &&  width > 5.5) h_DB_noiseMap_EEM_cut5_5->SetBinContent(eeid.ix()-0.5,eeid.iy()-0.5,width);
@@ -1461,7 +1456,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 	if (  itr -> energy() > ethrEE_ ){
 	  h_recHits_EEP_time          -> Fill( itr -> time() );
 	  h_recHits_EEP_Chi2          -> Fill( itr -> chi2() );
-	  //	  h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	  //h_recHits_EEP_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEP_occupancy     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEP_deviation     -> Fill( eeid.ix() - 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEP_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
@@ -1540,7 +1535,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 	if (  itr -> energy() > ethrEE_ ) {
 	  h_recHits_EEM_time          -> Fill( itr -> time() );
 	  h_recHits_EEM_Chi2          -> Fill( itr -> chi2() );
-	  //	  h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
+	  //h_recHits_EEM_OutOfTimeChi2 -> Fill( itr -> outOfTimeChi2() );
 	  h_recHits_EEM_occupancy     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_deviation     -> Fill( eeid.ix()- 0.5, eeid.iy() - 0.5 );
 	  h_recHits_EEM_iXoccupancy   -> Fill( eeid.ix() - 0.5 );
@@ -1807,9 +1802,9 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
    
   // size
-  h_recHits_EE_size    -> Fill( recHitsEE->size() );
-  h_recHits_EEP_size   -> Fill( nHitsEEP );
-  h_recHits_EEM_size   -> Fill( nHitsEEM );
+  h_recHits_EE_size    -> Fill( nGoodRecHitEEp + nGoodRecHitEEm );
+  h_recHits_EEP_size   -> Fill( nGoodRecHitEEp );
+  h_recHits_EEM_size   -> Fill( nGoodRecHitEEm );
 
   // energy
   h_recHits_EEP_energyMax -> Fill( maxRecHitEnergyEEP );
@@ -1979,7 +1974,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   // ... barrel
   edm::Handle<reco::BasicClusterCollection> basicClusters_EB_h;
-  ev.getByLabel( basicClusterCollection_EB_, basicClusters_EB_h );
+  ev.getByToken( basicClusterCollection_EB_, basicClusters_EB_h );
   const reco::BasicClusterCollection* theBarrelBasicClusters = basicClusters_EB_h.product () ;
   if ( ! basicClusters_EB_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> basicClusters_EB_h not found" << std::endl; 
@@ -2027,26 +2022,27 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
     ///Do the Track-cluster matching for the cleaned ones
      
     float theBestDr = 99999.;
-    for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
-    { 
-      ECALPositionCalculator posCalc;
-      const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
-      const math::XYZVector trackMom =  tkIt->momentum();
-
-      float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
-      float deltaphi=fabs( phi - itBC->phi() );
-      if(deltaphi>6.283185308) deltaphi -= 6.283185308;
-      if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
-
-      float eta= posCalc.ecalEta(trackMom,vertex);
-      float deltaeta=fabs( eta - itBC->eta() );
-      if(deltaeta>6.283185308) deltaeta -= 6.283185308;
-      if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
-
-      //compute dR squared
-      float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
-      if ( thisDr < theBestDr ) theBestDr = thisDr;
-    }
+//sun    for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
+//sun    { 
+//sun      ECALPositionCalculator posCalc;
+//sun      const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
+//sun      const math::XYZVector trackMom =  tkIt->momentum();
+//sun
+//sun      float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
+//sun        std::cout << "2 magnet = "<< theMagField.product()->inTesla(GlobalPoint(0.,0.,0.)).z() << " pt="<< trackMom.Rho() << " vet(x,y,z)="<< vertex.Rho() << "(" << BSPosition.x() <<"," << BSPosition.y() << "," << tkIt->vz() << ")" << " charge=" << tkIt -> charge() <<std::endl;
+//sun      float deltaphi=fabs( phi - itBC->phi() );
+//sun      if(deltaphi>6.283185308) deltaphi -= 6.283185308;
+//sun      if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
+//sun
+//sun      float eta= posCalc.ecalEta(trackMom,vertex);
+//sun      float deltaeta=fabs( eta - itBC->eta() );
+//sun      if(deltaeta>6.283185308) deltaeta -= 6.283185308;
+//sun      if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
+//sun
+//sun      //compute dR squared
+//sun      float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
+//sun      if ( thisDr < theBestDr ) theBestDr = thisDr;
+//sun    }
 
     h_basicClusters_EB_dr_cleaned_tkmatched -> Fill ( theBestDr );
     //Matching CL-Tk if the dr < 0.2
@@ -2067,7 +2063,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   // ... endcap
   edm::Handle<reco::BasicClusterCollection> basicClusters_EE_h;
-  ev.getByLabel( basicClusterCollection_EE_, basicClusters_EE_h );
+  ev.getByToken( basicClusterCollection_EE_, basicClusters_EE_h );
   if ( ! basicClusters_EE_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> basicClusters_EE_h not found" << std::endl; 
   }
@@ -2102,26 +2098,27 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
       
       float theBestDr = 99999.;
-      for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
-	{ 
-        ECALPositionCalculator posCalc;
-        const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
-        const math::XYZVector trackMom =  tkIt->momentum();
-  
-        float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
-        float deltaphi=fabs( phi - (*basicClusters_EE_h)[icl].phi() );
-        if(deltaphi>6.283185308) deltaphi -= 6.283185308;
-        if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
-  
-        float eta= posCalc.ecalEta(trackMom,vertex);
-        float deltaeta=fabs( eta - (*basicClusters_EE_h)[icl].eta() );
-        if(deltaeta>6.283185308) deltaeta -= 6.283185308;
-        if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
-  
-        //compute dR squared
-        float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
-        if ( thisDr < theBestDr ) theBestDr = thisDr;
-      }
+//sun      for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
+//sun	{ 
+//sun        ECALPositionCalculator posCalc;
+//sun        const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
+//sun        const math::XYZVector trackMom =  tkIt->momentum();
+//sun  
+//sun        float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
+//sun        std::cout << "3 magnet = "<< theMagField.product()->inTesla(GlobalPoint(0.,0.,0.)).z() << " pt="<< trackMom.Rho() << " vet(x,y,z)="<< vertex.Rho() << "(" << BSPosition.x() <<"," << BSPosition.y() << "," << tkIt->vz() << ")" << " charge=" << tkIt -> charge() <<std::endl;
+//sun        float deltaphi=fabs( phi - (*basicClusters_EE_h)[icl].phi() );
+//sun        if(deltaphi>6.283185308) deltaphi -= 6.283185308;
+//sun        if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
+//sun  
+//sun        float eta= posCalc.ecalEta(trackMom,vertex);
+//sun        float deltaeta=fabs( eta - (*basicClusters_EE_h)[icl].eta() );
+//sun        if(deltaeta>6.283185308) deltaeta -= 6.283185308;
+//sun        if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
+//sun  
+//sun        //compute dR squared
+//sun        float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
+//sun        if ( thisDr < theBestDr ) theBestDr = thisDr;
+//sun      }
       h_basicClusters_EEP_dr_tkmatched     -> Fill( theBestDr );
       //Matching CL-Tk if the dr < 0.2
       if ( theBestDr > 0.04 ) continue;
@@ -2142,26 +2139,26 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
       nBasicClustersEEM++;
       
       float theBestDr = 99999.;
-      for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
-      { 
-        ECALPositionCalculator posCalc;
-        const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
-        const math::XYZVector trackMom =  tkIt->momentum();
-  
-        float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
-        float deltaphi=fabs( phi - (*basicClusters_EE_h)[icl].phi() );
-        if(deltaphi>6.283185308) deltaphi -= 6.283185308;
-        if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
-  
-        float eta= posCalc.ecalEta(trackMom,vertex);
-        float deltaeta=fabs( eta - (*basicClusters_EE_h)[icl].eta() );
-        if(deltaeta>6.283185308) deltaeta -= 6.283185308;
-        if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
-  
-        //compute dR squared
-        float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
-        if ( thisDr < theBestDr ) theBestDr = thisDr;
-      }
+//sun      for (edm::View<reco::Track>::const_iterator tkIt = TracksHandle->begin (); tkIt != TracksHandle->end (); ++tkIt ) 
+//sun      { 
+//sun        ECALPositionCalculator posCalc;
+//sun        const math::XYZPoint vertex(BSPosition.x(),BSPosition.y(),tkIt->vz());
+//sun        const math::XYZVector trackMom =  tkIt->momentum();
+//sun  
+//sun        float phi= posCalc.ecalPhi(theMagField.product(),trackMom,vertex,tkIt -> charge());
+//sun        float deltaphi=fabs( phi - (*basicClusters_EE_h)[icl].phi() );
+//sun        if(deltaphi>6.283185308) deltaphi -= 6.283185308;
+//sun        if(deltaphi>3.141592654) deltaphi = 6.283185308-deltaphi;
+//sun  
+//sun        float eta= posCalc.ecalEta(trackMom,vertex);
+//sun        float deltaeta=fabs( eta - (*basicClusters_EE_h)[icl].eta() );
+//sun        if(deltaeta>6.283185308) deltaeta -= 6.283185308;
+//sun        if(deltaeta>3.141592654) deltaeta = 6.283185308-deltaeta;
+//sun  
+//sun        //compute dR squared
+//sun        float thisDr = deltaeta*deltaeta + deltaphi*deltaphi;
+//sun        if ( thisDr < theBestDr ) theBestDr = thisDr;
+//sun      }
       h_basicClusters_EEM_dr_tkmatched     -> Fill( theBestDr );
       //Matching CL-Tk if the dr < 0.2
       if ( theBestDr > 0.04 ) continue;
@@ -2185,7 +2182,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   // Super Clusters
   // ... barrel
   edm::Handle<reco::SuperClusterCollection> superClusters_EB_h;
-  ev.getByLabel( superClusterCollection_EB_, superClusters_EB_h );
+  ev.getByToken( superClusterCollection_EB_, superClusters_EB_h );
   const reco::SuperClusterCollection* theBarrelSuperClusters = superClusters_EB_h.product () ;
   if ( ! superClusters_EB_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> superClusters_EB_h not found" << std::endl; 
@@ -2289,7 +2286,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
   
   // ... endcap
   edm::Handle<reco::SuperClusterCollection> superClusters_EE_h;
-  ev.getByLabel( superClusterCollection_EE_, superClusters_EE_h );
+  ev.getByToken( superClusterCollection_EE_, superClusters_EE_h );
   const reco::SuperClusterCollection* theEndcapSuperClusters = superClusters_EE_h.product () ;
   if ( ! superClusters_EE_h.isValid() ) {
     std::cerr << "EcalValidation::analyze --> superClusters_EE_h not found" << std::endl; 
@@ -2405,7 +2402,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
  
   //Preshower RecHits
   edm::Handle<ESRecHitCollection> recHitsES;
-  ev.getByLabel (esRecHitCollection_, recHitsES) ;
+  ev.getByToken(esRecHitCollection_, recHitsES) ;
   const ESRecHitCollection* thePreShowerRecHits = recHitsES.product () ;
 
   if ( ! recHitsES.isValid() ) {
@@ -2460,12 +2457,12 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   // ES clusters in X plane
   Handle<PreshowerClusterCollection> esClustersX;
-  ev.getByLabel( esClusterCollectionX_, esClustersX);
+  ev.getByToken( esClusterCollectionX_, esClustersX);
   const PreshowerClusterCollection *ESclustersX = esClustersX.product();
 
   // ES clusters in Y plane
   Handle<PreshowerClusterCollection> esClustersY;
-  ev.getByLabel( esClusterCollectionY_, esClustersY);
+  ev.getByToken( esClusterCollectionY_, esClustersY);
   const PreshowerClusterCollection *ESclustersY = esClustersY.product(); 
 
   // Do the ES-BasicCluster matching 
@@ -2559,7 +2556,7 @@ void EcalValidation::analyze(const edm::Event& ev, const edm::EventSetup& iSetup
 
   /// Get Jets and draw EMF maps
   edm::Handle<reco::CaloJetCollection> JetHandle ;
-  ev.getByLabel (jets_,JetHandle);
+  ev.getByToken(jets_,JetHandle);
 
   for(unsigned int i=0; i<JetHandle->size(); ++i) 
   { 
